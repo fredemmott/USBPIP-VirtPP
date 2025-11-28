@@ -8,10 +8,9 @@
 #include <FredEmmott/USBIP.hpp>
 
 #include <print>
-
-#define NOMINMAX
 #include <ranges>
 
+#include <winioctl.h>
 #include <cfgmgr32.h>
 
 #pragma comment(lib, "Cfgmgr32.lib")
@@ -180,7 +179,6 @@ std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Device::Attach(
   } else {
     return std::unexpected{HRESULT_FROM_WIN32(ERROR_INVALID_INDEX)};
   }
-
 
   const auto targetPath = GetUSBIPWin32Path();
   if (!targetPath) {

@@ -26,6 +26,13 @@ add_executable(
 )
 target_include_directories(usbip_virtpp PRIVATE include/)
 target_compile_options(usbip_virtpp PRIVATE "/EHsc")
+target_compile_definitions(usbip_virtpp
+        PRIVATE
+        NOMINMAX
+        UNICODE
+        _UNICODE
+        WIN32_LEAN_AND_MEAN
+)
 
 find_package(wil CONFIG REQUIRED)
 target_link_libraries(usbip_virtpp PRIVATE WIL::WIL)

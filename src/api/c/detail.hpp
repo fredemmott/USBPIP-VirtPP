@@ -10,7 +10,6 @@
 
 #include <vector>
 
-#define NOMINMAX
 #include <winsock2.h>
 #include <wil/resource.h>
 

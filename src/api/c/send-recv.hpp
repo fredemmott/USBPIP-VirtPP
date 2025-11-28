@@ -3,9 +3,7 @@
 #pragma once
 
 #include <expected>
-#include <cstdint>
 
-#define NOMINMAX
 #include <winsock2.h>
 
 namespace FredEmmott::USBVirtPP {
