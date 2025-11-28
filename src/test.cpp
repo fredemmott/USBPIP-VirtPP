@@ -1,5 +1,4 @@
 #include <FredEmmott/USBIP-VirtPP.h>
-#include <FredEmmott/USBIP.hpp>
 #include <FredEmmott/USBSpec.hpp>
 
 #include <print>
@@ -10,7 +9,6 @@
 #pragma comment(lib, "ws2_32.lib")
 
 namespace USB = FredEmmott::USBSpec;
-namespace USBIP = FredEmmott::USBIP;
 
 namespace USBStrings {
 enum class Indices : uint8_t {
@@ -59,36 +57,19 @@ const uint8_t ReportDescriptor[] = {
 };
 
 // TODO: switch these around. Use LE (USB) byte order as the source of truth
-constexpr USBIP::Device MouseDevice{
-  .mPath = "/fake-device",
-  .mBusID = "1-1",
-  .mBusNum = 1,
-  .mDevNum = 1,
-  .mSpeed = USBIP::Speed::Full,
-  .mVendorID = 0x4242,
-  .mProductID = 0x4242,
-  .mDeviceVersion = 0x01'00,
-  .mConfigurationValue = 1,
-  .mNumConfigurations = 1,
-  .mNumInterfaces = 1,
-};
-constexpr USB::DeviceDescriptor MouseDeviceDescriptor{
+constexpr USB::DeviceDescriptor MouseDeviceDescriptor {
   .mDescriptorType = 0x01,// DEVICE
   .mUSBVersion = 0x02'00,
   .mMaxPacketSize0 = 0x40,
-  .mVendorID = MouseDevice.mVendorID.LittleEndianValue(),
-  .mProductID = MouseDevice.mProductID.LittleEndianValue(),
-  .mDeviceVersion = MouseDevice.mDeviceVersion.LittleEndianValue(),
+  .mVendorID = 0x4242,
+  .mProductID = 0x4242,
+  .mDeviceVersion = 0x01'00,
   .mManufacturerStringIndex
   = std::to_underlying(USBStrings::Indices::Manufacturer),
   .mProductStringIndex = std::to_underlying(USBStrings::Indices::Product),
   .mSerialNumberStringIndex
   = std::to_underlying(USBStrings::Indices::SerialNumber),
-  .mNumConfigurations = MouseDevice.mNumConfigurations,
-};
-
-constexpr USBIP::Interface MouseInterface{
-  .mClass = 3,// HID
+  .mNumConfigurations = 1,
 };
 
 constexpr struct MouseConfigurationDescriptor {
@@ -100,13 +81,11 @@ constexpr struct MouseConfigurationDescriptor {
     .mAttributes = 0x80 | 0x20,// bus-powered, remote wakeup
     .mMaxPower = 0x32,// 100ma
   };
-  USB::InterfaceDescriptor mInterface{
+  USB::InterfaceDescriptor mInterface {
     .mNumEndpoints = 1,
-    .mClass = MouseInterface.mClass,
-    .mSubClass = MouseInterface.mSubClass,
-    .mProtocol = MouseInterface.mProtocol,
+    .mClass = 3,// HID
     .mInterfaceStringIndex = std::to_underlying(USBStrings::Indices::Interface),
-  };
+    };
   USB::HIDDescriptor mHID{
     .mLength = sizeof(USB::HIDDescriptor) + sizeof(USB::HIDDescriptor::Report),
     .mHIDSpecVersion = 0x01'11,
@@ -276,10 +255,12 @@ int main() {
     .mDeviceClass = MouseDeviceDescriptor.mClass,
     .mDeviceSubClass = MouseDeviceDescriptor.mSubClass,
     .mDeviceProtocol = MouseDeviceDescriptor.mProtocol,
-    .mConfigurationValue = MouseConfigurationDescriptor.mConfiguration.mConfigurationValue,
+    .mConfigurationValue = MouseConfigurationDescriptor.mConfiguration.
+    mConfigurationValue,
     .mNumConfigurations = 1,
     .mNumInterfaces = 1,
   };
+  constexpr auto& MouseInterface = MouseConfigurationDescriptor.mInterface;
   const FREDEMMOTT_USBIP_VirtPP_Device_InterfaceConfig interfaceConfig{
     .mClass = MouseInterface.mClass,
     .mSubClass = MouseInterface.mSubClass,
