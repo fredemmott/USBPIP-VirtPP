@@ -385,6 +385,9 @@ void handle_usbip_connection(SOCKET client_socket) {
 }
 
 int main() {
+    // Avoid need for explicit flush after each println
+    setvbuf(stdout, nullptr, _IONBF, 0);
+    setvbuf(stderr, nullptr, _IONBF, 0);
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         std::println(stderr, "WSAStartup failed.");
