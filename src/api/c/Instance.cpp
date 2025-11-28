@@ -21,7 +21,7 @@ namespace {
 auto MakeUSBIPDevice(
   uint32_t busId,
   uint32_t deviceId,
-  const FREDEMMOTT_USBIP_VirtPP_Device_DeviceConfig& config) {
+  const FredEmmott_USBIP_VirtPP_Device_DeviceConfig& config) {
   USBIP::Device ret{
     .mBusNum = busId,
     .mDevNum = deviceId,
@@ -46,22 +46,22 @@ auto MakeUSBIPDevice(
 }
 }
 
-extern "C" FREDEMMOTT_USBIP_VirtPP_InstanceHandle FREDEMMOTT_USBIP_VirtPP_Instance_Create(
-  const FREDEMMOTT_USBIP_VirtPP_Instance_InitData* initData) {
-  auto ret = std::make_unique<FREDEMMOTT_USBIP_VirtPP_Instance>(initData);
+extern "C" FredEmmott_USBIP_VirtPP_InstanceHandle FredEmmott_USBIP_VirtPP_Instance_Create(
+  const FredEmmott_USBIP_VirtPP_Instance_InitData* initData) {
+  auto ret = std::make_unique<FredEmmott_USBIP_VirtPP_Instance>(initData);
   if (!ret->mListeningSocket) {
     return nullptr;
   }
   return ret.release();
 }
 
-FREDEMMOTT_USBIP_VirtPP_Instance::~FREDEMMOTT_USBIP_VirtPP_Instance() {
+FredEmmott_USBIP_VirtPP_Instance::~FredEmmott_USBIP_VirtPP_Instance() {
   if (mNeedWSACleanup)
     WSACleanup();
 }
 
-FREDEMMOTT_USBIP_VirtPP_Instance::FREDEMMOTT_USBIP_VirtPP_Instance(
-  const FREDEMMOTT_USBIP_VirtPP_Instance_InitData* initData)
+FredEmmott_USBIP_VirtPP_Instance::FredEmmott_USBIP_VirtPP_Instance(
+  const FredEmmott_USBIP_VirtPP_Instance_InitData* initData)
   : mInitData(*initData) {
   WSADATA wsaData{};
   if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -101,12 +101,12 @@ FREDEMMOTT_USBIP_VirtPP_Instance::FREDEMMOTT_USBIP_VirtPP_Instance(
   mListeningSocket = std::move(listeningSocket);
 }
 
-uint16_t FREDEMMOTT_USBIP_VirtPP_Instance_GetPortNumber(
-  const FREDEMMOTT_USBIP_VirtPP_InstanceHandle instance) {
+uint16_t FredEmmott_USBIP_VirtPP_Instance_GetPortNumber(
+  const FredEmmott_USBIP_VirtPP_InstanceHandle instance) {
   return instance->GetPortNumber();
 }
 
-uint16_t FREDEMMOTT_USBIP_VirtPP_Instance::GetPortNumber() const {
+uint16_t FredEmmott_USBIP_VirtPP_Instance::GetPortNumber() const {
   if (!mListeningSocket) {
     LogError("GetPortNumber() called without a listening socket");
     return 0;
@@ -123,13 +123,13 @@ uint16_t FREDEMMOTT_USBIP_VirtPP_Instance::GetPortNumber() const {
   return ntohs(server_addr.sin_port);
 }
 
-void FREDEMMOTT_USBIP_VirtPP_Instance_Run(
-  const FREDEMMOTT_USBIP_VirtPP_InstanceHandle instance) {
+void FredEmmott_USBIP_VirtPP_Instance_Run(
+  const FredEmmott_USBIP_VirtPP_InstanceHandle instance) {
   instance->Run();
 }
 
-void FREDEMMOTT_USBIP_VirtPP_Instance::Run() {
-  const auto future = std::async(std::launch::async, &FREDEMMOTT_USBIP_VirtPP_Instance::AutoAttach, this);
+void FredEmmott_USBIP_VirtPP_Instance::Run() {
+  const auto future = std::async(std::launch::async, &FredEmmott_USBIP_VirtPP_Instance::AutoAttach, this);
   while (!mStopSource.stop_requested()) {
     Log("Listening for USB/IP connections on port {}", this->GetPortNumber());
     const wil::unique_socket clientSocket{
@@ -142,7 +142,7 @@ void FREDEMMOTT_USBIP_VirtPP_Instance::Run() {
   }
 }
 
-void FREDEMMOTT_USBIP_VirtPP_Instance::HandleClient(const SOCKET clientSocket) {
+void FredEmmott_USBIP_VirtPP_Instance::HandleClient(const SOCKET clientSocket) {
   if (mClientSocket != INVALID_SOCKET) {
     LogError("Multiple clients connected");
     return;
@@ -231,7 +231,7 @@ void FREDEMMOTT_USBIP_VirtPP_Instance::HandleClient(const SOCKET clientSocket) {
   }
 }
 
-std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Instance::OnDevListOp() {
+std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnDevListOp() {
   const USBIP::OP_REP_DEVLIST header{
     .mNumDevices = static_cast<uint32_t>(std::ranges::fold_left(
       mBusses,
@@ -264,7 +264,7 @@ std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Instance::OnDevListOp() {
   return {};
 }
 
-std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Instance::OnImportOp(
+std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnImportOp(
   const FredEmmott::USBIP::OP_REQ_IMPORT& request) {
   const std::string_view busId{request.mBusID};
 
@@ -292,7 +292,7 @@ std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Instance::OnImportOp(
   return SendAll(mClientSocket, reply);
 }
 
-std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Instance::OnInputRequest(FREDEMMOTT_USBIP_VirtPP_Device& device, const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request, const FREDEMMOTT_USBIP_VirtPP_Request apiRequest)
+std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnInputRequest(FredEmmott_USBIP_VirtPP_Device& device, const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request, const FredEmmott_USBIP_VirtPP_Request apiRequest)
 {
   const auto ret = device.mCallbacks.OnInputRequest(
     &apiRequest,
@@ -302,13 +302,13 @@ std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Instance::OnInputRequest(FR
     request.mSetup.mValue,
     request.mSetup.mIndex,
     request.mSetup.mLength);
-  if (FREDEMMOTT_USBIP_VirtPP_SUCCEEDED(ret)) [[likely]] {
+  if (FredEmmott_USBIP_VirtPP_SUCCEEDED(ret)) [[likely]] {
     return {};
   }
   return std::unexpected{std::bit_cast<HRESULT>(ret)};
 }
 
-std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Instance::OnSubmitRequest(
+std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnSubmitRequest(
   const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request) {
   const auto busIndex = (request.mHeader.mDeviceID.NativeValue() >> 16) - 1;
   const auto deviceIndex = (request.mHeader.mDeviceID.NativeValue() & 0xffff) -
@@ -322,7 +322,7 @@ std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Instance::OnSubmitRequest(
     return std::unexpected{HRESULT_FROM_WIN32(ERROR_INVALID_INDEX)};
   }
   auto& device = mBusses.at(busIndex).at(deviceIndex);
-  const FREDEMMOTT_USBIP_VirtPP_Request apiRequest{
+  const FredEmmott_USBIP_VirtPP_Request apiRequest{
     .mDevice = &device,
     .mSequenceNumber = request.mHeader.mSequenceNumber,
     .mTransferBufferLength = request.mTransferBufferLength.NativeValue(),
@@ -336,7 +336,7 @@ std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Instance::OnSubmitRequest(
     constexpr auto SetConfiguration = 0x09;
     switch (request.mSetup.mRequest) {
       case SetConfiguration: // no-op, we only support 1 configuration
-        if (const auto ret = FREDEMMOTT_USBIP_VirtPP_Request_SendReply(&apiRequest, nullptr, 0); !FREDEMMOTT_USBIP_VirtPP_SUCCEEDED(ret)) [[unlikely]] {
+        if (const auto ret = FredEmmott_USBIP_VirtPP_Request_SendReply(&apiRequest, nullptr, 0); !FredEmmott_USBIP_VirtPP_SUCCEEDED(ret)) [[unlikely]] {
           return std::unexpected { static_cast<HRESULT>(ret) };
         }
         return {};
@@ -349,7 +349,7 @@ std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Instance::OnSubmitRequest(
   if ((request.mSetup.mRequestType & 0x20) == 0x20 && request.mSetup.mRequest == 0x0a) {
     // SET_IDLE
     // We don't suport repeating.
-    if (const auto ret = FREDEMMOTT_USBIP_VirtPP_Request_SendReply(&apiRequest, nullptr, 0); !FREDEMMOTT_USBIP_VirtPP_SUCCEEDED(ret)) [[unlikely]] {
+    if (const auto ret = FredEmmott_USBIP_VirtPP_Request_SendReply(&apiRequest, nullptr, 0); !FredEmmott_USBIP_VirtPP_SUCCEEDED(ret)) [[unlikely]] {
       return std::unexpected { static_cast<HRESULT>(ret) };
     }
     return {};
@@ -363,14 +363,14 @@ std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Instance::OnSubmitRequest(
 }
 
 
-std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Instance::OnUnlinkRequest(
+std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnUnlinkRequest(
   const USBIP::USBIP_CMD_UNLINK& request) {
   USBIP::USBIP_RET_UNLINK response{};
   response.mHeader.mSequenceNumber = request.mHeader.mSequenceNumber;
   return SendAll(mClientSocket, response);
 }
 
-void FREDEMMOTT_USBIP_VirtPP_Instance::AutoAttach() {
+void FredEmmott_USBIP_VirtPP_Instance::AutoAttach() {
   for (auto&& [i, bus]: std::views::enumerate(mBusses)) {
     for (auto&& [j, device]: std::views::enumerate(bus)) {
       if (!device.mAutoAttach) {
@@ -383,22 +383,22 @@ void FREDEMMOTT_USBIP_VirtPP_Instance::AutoAttach() {
   }
 }
 
-void FREDEMMOTT_USBIP_VirtPP_Instance_RequestStop(
-  const FREDEMMOTT_USBIP_VirtPP_InstanceHandle handle) {
+void FredEmmott_USBIP_VirtPP_Instance_RequestStop(
+  const FredEmmott_USBIP_VirtPP_InstanceHandle handle) {
   handle->mStopSource.request_stop();
 }
 
-void FREDEMMOTT_USBIP_VirtPP_Instance_Destroy(
-  const FREDEMMOTT_USBIP_VirtPP_InstanceHandle handle) {
+void FredEmmott_USBIP_VirtPP_Instance_Destroy(
+  const FredEmmott_USBIP_VirtPP_InstanceHandle handle) {
   delete handle;
 }
 
-void* FREDEMMOTT_USBIP_VirtPP_Instance_GetUserData(
-  const FREDEMMOTT_USBIP_VirtPP_InstanceHandle handle) {
+void* FredEmmott_USBIP_VirtPP_Instance_GetUserData(
+  const FredEmmott_USBIP_VirtPP_InstanceHandle handle) {
   return handle->mInitData.mUserData;
 }
 
-void FREDEMMOTT_USBIP_VirtPP_RequestStopInstance(
-  FREDEMMOTT_USBIP_VirtPP_InstanceHandle instance) {
+void FredEmmott_USBIP_VirtPP_RequestStopInstance(
+  FredEmmott_USBIP_VirtPP_InstanceHandle instance) {
   instance->mStopSource.request_stop();
 }

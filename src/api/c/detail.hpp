@@ -18,22 +18,22 @@
 #include <print>
 #include <string_view>
 
-struct FREDEMMOTT_USBIP_VirtPP_Device final {
+struct FredEmmott_USBIP_VirtPP_Device final {
   bool mAutoAttach{};
 
-  FREDEMMOTT_USBIP_VirtPP_InstanceHandle mInstance{};
+  FredEmmott_USBIP_VirtPP_InstanceHandle mInstance{};
 
-  FREDEMMOTT_USBIP_VirtPP_Device_Callbacks mCallbacks{};
-  FREDEMMOTT_USBIP_VirtPP_Device_DeviceConfig mConfig{};
-  std::vector<FREDEMMOTT_USBIP_VirtPP_Device_InterfaceConfig> mInterfaces{};
+  FredEmmott_USBIP_VirtPP_Device_Callbacks mCallbacks{};
+  FredEmmott_USBIP_VirtPP_Device_DeviceConfig mConfig{};
+  std::vector<FredEmmott_USBIP_VirtPP_Device_InterfaceConfig> mInterfaces{};
 
   void* mUserData{};
 
-  FREDEMMOTT_USBIP_VirtPP_Device() = delete;
-  explicit FREDEMMOTT_USBIP_VirtPP_Device(
-    FREDEMMOTT_USBIP_VirtPP_InstanceHandle,
-    const FREDEMMOTT_USBIP_VirtPP_Device_InitData*);
-  ~FREDEMMOTT_USBIP_VirtPP_Device() = default;
+  FredEmmott_USBIP_VirtPP_Device() = delete;
+  explicit FredEmmott_USBIP_VirtPP_Device(
+    FredEmmott_USBIP_VirtPP_InstanceHandle,
+    const FredEmmott_USBIP_VirtPP_Device_InitData*);
+  ~FredEmmott_USBIP_VirtPP_Device() = default;
 
   std::expected<void, HRESULT> Attach(
     std::string_view busID = {}) const;
@@ -42,10 +42,10 @@ private:
   std::optional<std::string> GetBusID() const;
 };
 
-struct FREDEMMOTT_USBIP_VirtPP_Instance final {
-  using Bus = std::vector<FREDEMMOTT_USBIP_VirtPP_Device>;
+struct FredEmmott_USBIP_VirtPP_Instance final {
+  using Bus = std::vector<FredEmmott_USBIP_VirtPP_Device>;
 
-  FREDEMMOTT_USBIP_VirtPP_Instance_InitData mInitData{};
+  FredEmmott_USBIP_VirtPP_Instance_InitData mInitData{};
 
   std::stop_source mStopSource;
 
@@ -54,10 +54,10 @@ struct FREDEMMOTT_USBIP_VirtPP_Instance final {
 
   std::vector<Bus> mBusses{};
 
-  FREDEMMOTT_USBIP_VirtPP_Instance() = delete;
-  explicit FREDEMMOTT_USBIP_VirtPP_Instance(
-    const FREDEMMOTT_USBIP_VirtPP_Instance_InitData*);
-  ~FREDEMMOTT_USBIP_VirtPP_Instance();
+  FredEmmott_USBIP_VirtPP_Instance() = delete;
+  explicit FredEmmott_USBIP_VirtPP_Instance(
+    const FredEmmott_USBIP_VirtPP_Instance_InitData*);
+  ~FredEmmott_USBIP_VirtPP_Instance();
   uint16_t GetPortNumber() const;
 
   template <class... Args>
@@ -70,7 +70,7 @@ struct FREDEMMOTT_USBIP_VirtPP_Instance final {
       callback(severity, formatted.c_str(), formatted.size());
     } else {
       std::println(
-        (severity >= FREDEMMOTT_USBIP_VirtPP_LogSeverity_Error)
+        (severity >= FredEmmott_USBIP_VirtPP_LogSeverity_Error)
         ? stderr
         : stdout,
         fmt,
@@ -81,7 +81,7 @@ struct FREDEMMOTT_USBIP_VirtPP_Instance final {
   template <class... Args>
   void LogError(std::format_string<Args...> fmt, Args&&... args) const {
     LogSeverity(
-      FREDEMMOTT_USBIP_VirtPP_LogSeverity_Error,
+      FredEmmott_USBIP_VirtPP_LogSeverity_Error,
       fmt,
       std::forward<Args>(args)...);
   }
@@ -89,7 +89,7 @@ struct FREDEMMOTT_USBIP_VirtPP_Instance final {
   template <class... Args>
   void Log(std::format_string<Args...> fmt, Args&&... args) const {
     LogSeverity(
-      FREDEMMOTT_USBIP_VirtPP_LogSeverity_Default,
+      FredEmmott_USBIP_VirtPP_LogSeverity_Default,
       fmt,
       std::forward<Args>(args)...);
   }
@@ -104,9 +104,9 @@ private:
   std::expected<void, HRESULT> OnImportOp(
     const FredEmmott::USBIP::OP_REQ_IMPORT&);
   std::expected<void, HRESULT> OnInputRequest(
-    FREDEMMOTT_USBIP_VirtPP_Device& device,
+    FredEmmott_USBIP_VirtPP_Device& device,
     const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request,
-    FREDEMMOTT_USBIP_VirtPP_Request apiRequest);
+    FredEmmott_USBIP_VirtPP_Request apiRequest);
   std::expected<void, HRESULT> OnSubmitRequest(
     const FredEmmott::USBIP::USBIP_CMD_SUBMIT&);
   std::expected<void, HRESULT> OnUnlinkRequest(
@@ -115,8 +115,8 @@ private:
   void AutoAttach();
 };
 
-struct FREDEMMOTT_USBIP_VirtPP_Request {
-  FREDEMMOTT_USBIP_VirtPP_DeviceHandle mDevice{};
+struct FredEmmott_USBIP_VirtPP_Request {
+  FredEmmott_USBIP_VirtPP_DeviceHandle mDevice{};
   uint32_t mSequenceNumber{};
   uint32_t mTransferBufferLength{};
 };

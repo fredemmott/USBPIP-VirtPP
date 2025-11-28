@@ -103,8 +103,8 @@ constexpr struct MouseConfigurationDescriptor {
   };
 } MouseConfigurationDescriptor;
 
-extern "C" FREDEMMOTT_USBIP_VirtPP_Result OnInputRequest(
-  const FREDEMMOTT_USBIP_VirtPP_RequestHandle handle,
+extern "C" FredEmmott_USBIP_VirtPP_Result OnInputRequest(
+  const FredEmmott_USBIP_VirtPP_RequestHandle handle,
   const uint32_t endpoint,
   const uint8_t requestType,
   const uint8_t request,
@@ -135,13 +135,13 @@ extern "C" FREDEMMOTT_USBIP_VirtPP_Result OnInputRequest(
 
       if (descriptorType == 0x01) {
         std::println("   - Responding with DEVICE Descriptor.");
-        return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
+        return FredEmmott_USBIP_VirtPP_Request_SendReply(
           handle,
           MouseDeviceDescriptor);
       }
       if (descriptorType == 0x02) {
         std::println("   - Responding with CONFIGURATION Descriptor.");
-        return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
+        return FredEmmott_USBIP_VirtPP_Request_SendReply(
           handle,
           MouseConfigurationDescriptor);
       }
@@ -150,29 +150,29 @@ extern "C" FREDEMMOTT_USBIP_VirtPP_Result OnInputRequest(
         switch (static_cast<USBStrings::Indices>(descriptorIndex)) {
           case USBStrings::Indices::LangID:
             std::println("   - Responding with LANGID String Descriptor.");
-            return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
+            return FredEmmott_USBIP_VirtPP_Request_SendReply(
               handle,
               USBStrings::LangID);
           case USBStrings::Indices::Manufacturer:
             std::println(
               "   - Responding with MANUFACTURER String Descriptor.");
-            return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
+            return FredEmmott_USBIP_VirtPP_Request_SendReply(
               handle,
               USBStrings::Manufacturer);
           case USBStrings::Indices::Product:
             std::println("   - Responding with PRODUCT String Descriptor.");
-            return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
+            return FredEmmott_USBIP_VirtPP_Request_SendReply(
               handle,
               USBStrings::Product);
           case USBStrings::Indices::SerialNumber:
             std::println(
               "   - Responding with SERIALNUMBER String Descriptor.");
-            return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
+            return FredEmmott_USBIP_VirtPP_Request_SendReply(
               handle,
               USBStrings::SerialNumber);
           case USBStrings::Indices::Interface:
             std::println("   - Responding with INTERFACE String Descriptor.");
-            return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
+            return FredEmmott_USBIP_VirtPP_Request_SendReply(
               handle,
               USBStrings::Interface);
         }
@@ -184,7 +184,7 @@ extern "C" FREDEMMOTT_USBIP_VirtPP_Result OnInputRequest(
       if (descriptorType == 0x22) {
         // HID Report Descriptor
         std::println("   - Responding with HID REPORT Descriptor bytes).");
-        return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
+        return FredEmmott_USBIP_VirtPP_Request_SendReply(
           handle,
           ReportDescriptor);
       }
@@ -195,7 +195,7 @@ extern "C" FREDEMMOTT_USBIP_VirtPP_Result OnInputRequest(
       if (descriptorType == 0x22) {
         // HID report
         std::println("   - Responding with HID REPORT Descriptor bytes.");
-        return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
+        return FredEmmott_USBIP_VirtPP_Request_SendReply(
           handle,
           ReportDescriptor);
       }
@@ -214,7 +214,7 @@ extern "C" FREDEMMOTT_USBIP_VirtPP_Result OnInputRequest(
 
   if (endpoint == 1) {
     const uint8_t mouseReport[] = {0x00, 0x01, 0x01};
-    return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(handle, mouseReport);
+    return FredEmmott_USBIP_VirtPP_Request_SendReply(handle, mouseReport);
   }
 
   // Unhandled endpoint or direction (e.g., EP1 OUT, which is not a standard
@@ -230,17 +230,17 @@ int main() {
   // Avoid need for explicit flush after each println
   setvbuf(stdout, nullptr, _IONBF, 0);
   setvbuf(stderr, nullptr, _IONBF, 0);
-  const FREDEMMOTT_USBIP_VirtPP_Instance_InitData instanceInit{
+  const FredEmmott_USBIP_VirtPP_Instance_InitData instanceInit{
     .mPortNumber = 1337,
   };
-  auto instance = FREDEMMOTT_USBIP_VirtPP_Instance_Create(&instanceInit);
+  auto instance = FredEmmott_USBIP_VirtPP_Instance_Create(&instanceInit);
   const auto destroyInstance = wil::scope_exit(
-    std::bind_front(&FREDEMMOTT_USBIP_VirtPP_Instance_Destroy, instance));
+    std::bind_front(&FredEmmott_USBIP_VirtPP_Instance_Destroy, instance));
 
-  const FREDEMMOTT_USBIP_VirtPP_Device_Callbacks callbacks{
+  const FredEmmott_USBIP_VirtPP_Device_Callbacks callbacks{
     .OnInputRequest = &OnInputRequest,
   };
-  const FREDEMMOTT_USBIP_VirtPP_Device_DeviceConfig deviceConfig{
+  const FredEmmott_USBIP_VirtPP_Device_DeviceConfig deviceConfig{
     .mVendorID = MouseDeviceDescriptor.mVendorID,
     .mProductID = MouseDeviceDescriptor.mProductID,
     .mDeviceClass = MouseDeviceDescriptor.mClass,
@@ -252,24 +252,24 @@ int main() {
     .mNumInterfaces = 1,
   };
   constexpr auto& MouseInterface = MouseConfigurationDescriptor.mInterface;
-  const FREDEMMOTT_USBIP_VirtPP_Device_InterfaceConfig interfaceConfig{
+  const FredEmmott_USBIP_VirtPP_Device_InterfaceConfig interfaceConfig{
     .mClass = MouseInterface.mClass,
     .mSubClass = MouseInterface.mSubClass,
     .mProtocol = MouseInterface.mProtocol,
   };
-  const FREDEMMOTT_USBIP_VirtPP_Device_InitData deviceInit{
+  const FredEmmott_USBIP_VirtPP_Device_InitData deviceInit{
     .mAutoAttach = true,
     .mCallbacks = &callbacks,
     .mDeviceConfig = &deviceConfig,
     .mInterfaceConfigs = &interfaceConfig,
   };
-  const auto device = FREDEMMOTT_USBIP_VirtPP_Device_Create(
+  const auto device = FredEmmott_USBIP_VirtPP_Device_Create(
     instance,
     &deviceInit);
   const auto destroyDevice = wil::scope_exit(
-    std::bind_front(&FREDEMMOTT_USBIP_VirtPP_Device_Destroy, device));
+    std::bind_front(&FredEmmott_USBIP_VirtPP_Device_Destroy, device));
 
-  FREDEMMOTT_USBIP_VirtPP_Instance_Run(instance);
+  FredEmmott_USBIP_VirtPP_Instance_Run(instance);
 
   return 0;
 }

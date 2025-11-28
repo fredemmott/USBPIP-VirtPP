@@ -80,25 +80,25 @@ struct AttachIOCTL {
 };
 }
 
-FREDEMMOTT_USBIP_VirtPP_InstanceHandle
-FREDEMMOTT_USBIP_VirtPP_Device_GetInstance(
-  const FREDEMMOTT_USBIP_VirtPP_DeviceHandle handle) {
+FredEmmott_USBIP_VirtPP_InstanceHandle
+FredEmmott_USBIP_VirtPP_Device_GetInstance(
+  const FredEmmott_USBIP_VirtPP_DeviceHandle handle) {
   return handle->mInstance;
 }
 
-void* FREDEMMOTT_USBIP_VirtPP_Device_GetInstanceUserData(
-  const FREDEMMOTT_USBIP_VirtPP_DeviceHandle handle) {
+void* FredEmmott_USBIP_VirtPP_Device_GetInstanceUserData(
+  const FredEmmott_USBIP_VirtPP_DeviceHandle handle) {
   return handle->mInstance->mInitData.mUserData;
 }
 
-void* FREDEMMOTT_USBIP_VirtPP_Device_GetUserData(
-  const FREDEMMOTT_USBIP_VirtPP_DeviceHandle handle) {
+void* FredEmmott_USBIP_VirtPP_Device_GetUserData(
+  const FredEmmott_USBIP_VirtPP_DeviceHandle handle) {
   return handle->mUserData;
 }
 
-FREDEMMOTT_USBIP_VirtPP_Device::FREDEMMOTT_USBIP_VirtPP_Device(
-  FREDEMMOTT_USBIP_VirtPP_InstanceHandle instance,
-  const FREDEMMOTT_USBIP_VirtPP_Device_InitData* initData)
+FredEmmott_USBIP_VirtPP_Device::FredEmmott_USBIP_VirtPP_Device(
+  FredEmmott_USBIP_VirtPP_InstanceHandle instance,
+  const FredEmmott_USBIP_VirtPP_Device_InitData* initData)
   : mInstance(instance) {
   if (!instance) {
     return;
@@ -136,10 +136,10 @@ FREDEMMOTT_USBIP_VirtPP_Device::FREDEMMOTT_USBIP_VirtPP_Device(
   instance->mBusses.back().emplace_back(*this);
 }
 
-FREDEMMOTT_USBIP_VirtPP_DeviceHandle FREDEMMOTT_USBIP_VirtPP_Device_Create(
-  const FREDEMMOTT_USBIP_VirtPP_InstanceHandle instance,
-  const FREDEMMOTT_USBIP_VirtPP_Device_InitData* initData) {
-  auto ret = std::make_unique<FREDEMMOTT_USBIP_VirtPP_Device>(
+FredEmmott_USBIP_VirtPP_DeviceHandle FredEmmott_USBIP_VirtPP_Device_Create(
+  const FredEmmott_USBIP_VirtPP_InstanceHandle instance,
+  const FredEmmott_USBIP_VirtPP_Device_InitData* initData) {
+  auto ret = std::make_unique<FredEmmott_USBIP_VirtPP_Device>(
     instance,
     initData);
   if (!ret->mInstance) {
@@ -148,18 +148,18 @@ FREDEMMOTT_USBIP_VirtPP_DeviceHandle FREDEMMOTT_USBIP_VirtPP_Device_Create(
   return ret.release();
 }
 
-void FREDEMMOTT_USBIP_VirtPP_Device_Destroy(
-  const FREDEMMOTT_USBIP_VirtPP_DeviceHandle handle) {
+void FredEmmott_USBIP_VirtPP_Device_Destroy(
+  const FredEmmott_USBIP_VirtPP_DeviceHandle handle) {
   delete handle;
 }
 
-FREDEMMOTT_USBIP_VirtPP_Result FREDEMMOTT_USBIP_VirtPP_Device_Attach(
-  const FREDEMMOTT_USBIP_VirtPP_DeviceHandle handle) {
-  return static_cast<FREDEMMOTT_USBIP_VirtPP_Result>(handle->Attach().error_or(
+FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Device_Attach(
+  const FredEmmott_USBIP_VirtPP_DeviceHandle handle) {
+  return static_cast<FredEmmott_USBIP_VirtPP_Result>(handle->Attach().error_or(
     S_OK));
 }
 
-std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Device::Attach(
+std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Device::Attach(
   const std::string_view busID
   ) const {
   // I decided to directly use the IOCTL primarily because of the use of C++
@@ -218,7 +218,7 @@ std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Device::Attach(
   return {};
 }
 
-std::optional<std::string> FREDEMMOTT_USBIP_VirtPP_Device::GetBusID() const {
+std::optional<std::string> FredEmmott_USBIP_VirtPP_Device::GetBusID() const {
   for (auto&& [i, bus]: std::views::enumerate(mInstance->mBusses)) {
     for (auto&& [j, device]: std::views::enumerate(bus)) {
       if (&device == this) {
