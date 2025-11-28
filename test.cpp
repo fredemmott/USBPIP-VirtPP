@@ -400,8 +400,8 @@ int main() {
 
     sockaddr_in server_addr{};
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(1337); // Default USB/IP port
     server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    server_addr.sin_port = 0;
 
     if (bind(listen_socket, (sockaddr *) &server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
         std::println(stderr, "bind failed with error: {}", WSAGetLastError());
