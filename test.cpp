@@ -132,8 +132,6 @@ constexpr USB::DeviceDescriptor MouseDeviceDescriptor {
 
 constexpr USBIP::Interface MouseInterface {
   .mClass = 3,// HID
-  .mSubClass = 1,// Boot interface
-  .mProtocol = 2,// Mouse
 };
 
 constexpr struct MouseConfigurationDescriptor {
