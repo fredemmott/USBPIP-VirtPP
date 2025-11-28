@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: MIT
 #pragma once
 
+#include "USBSpec.h"
+
 #ifdef __cplusplus
 #include <cstdint>
 
@@ -19,14 +21,6 @@ typedef const FredEmmott_USBIP_VirtPP_Device* FredEmmott_USBIP_VirtPP_DeviceHand
 struct FredEmmott_USBIP_VirtPP_Request;
 typedef const FredEmmott_USBIP_VirtPP_Request*
 FredEmmott_USBIP_VirtPP_RequestHandle;
-
-
-void* FredEmmott_USBIP_VirtPP_Device_GetUserData(
-  FredEmmott_USBIP_VirtPP_DeviceHandle);
-FredEmmott_USBIP_VirtPP_InstanceHandle FredEmmott_USBIP_VirtPP_Device_GetInstance(
-  FredEmmott_USBIP_VirtPP_DeviceHandle);
-void* FredEmmott_USBIP_VirtPP_Device_GetInstanceUserData(
-  FredEmmott_USBIP_VirtPP_DeviceHandle);
 
 typedef int32_t FredEmmott_USBIP_VirtPP_Result;
 #define FredEmmott_USBIP_VirtPP_SUCCESS (0)
@@ -75,24 +69,6 @@ struct FredEmmott_USBIP_VirtPP_Device_Callbacks {
     );
 };
 
-struct FredEmmott_USBIP_VirtPP_Device_InterfaceConfig {
-  uint8_t mClass;
-  uint8_t mSubClass;
-  uint8_t mProtocol;
-};
-
-struct FredEmmott_USBIP_VirtPP_Device_DeviceConfig {
-  uint16_t mVendorID;
-  uint16_t mProductID;
-  uint16_t mDeviceVersion;/* BCD */
-  uint8_t mDeviceClass;
-  uint8_t mDeviceSubClass;
-  uint8_t mDeviceProtocol;
-  uint8_t mConfigurationValue;
-  uint8_t mNumConfigurations;
-  uint8_t mNumInterfaces;
-};
-
 #define FredEmmott_USBIP_VirtPP_LogSeverity_Debug (-16)
 #define FredEmmott_USBIP_VirtPP_LogSeverity_Default (0)
 #define FredEmmott_USBIP_VirtPP_LogSeverity_Error (16)
@@ -101,8 +77,9 @@ struct FredEmmott_USBIP_VirtPP_Device_InitData {
   void* mUserData;
   bool mAutoAttach;
   FredEmmott_USBIP_VirtPP_Device_Callbacks const* mCallbacks;
-  FredEmmott_USBIP_VirtPP_Device_DeviceConfig const* mDeviceConfig;
-  FredEmmott_USBIP_VirtPP_Device_InterfaceConfig const* mInterfaceConfigs;
+  FredEmmott_USBSpec_DeviceDescriptor const* mDeviceDescriptor;
+  uint8_t mNumInterfaces;
+  FredEmmott_USBSpec_InterfaceDescriptor const* mInterfaceDescriptors;
 };
 
 /***** Device:: methods *****/
@@ -112,6 +89,12 @@ FredEmmott_USBIP_VirtPP_DeviceHandle FredEmmott_USBIP_VirtPP_Device_Create(
   FredEmmott_USBIP_VirtPP_Device_InitData const*);
 FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Device_Attach(FredEmmott_USBIP_VirtPP_DeviceHandle);
 void FredEmmott_USBIP_VirtPP_Device_Destroy(FredEmmott_USBIP_VirtPP_DeviceHandle);
+void* FredEmmott_USBIP_VirtPP_Device_GetUserData(
+  FredEmmott_USBIP_VirtPP_DeviceHandle);
+FredEmmott_USBIP_VirtPP_InstanceHandle FredEmmott_USBIP_VirtPP_Device_GetInstance(
+  FredEmmott_USBIP_VirtPP_DeviceHandle);
+void* FredEmmott_USBIP_VirtPP_Device_GetInstanceUserData(
+  FredEmmott_USBIP_VirtPP_DeviceHandle);
 
 /****** Request:: methods *****/
 

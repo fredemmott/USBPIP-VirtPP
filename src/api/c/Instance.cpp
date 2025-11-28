@@ -21,20 +21,21 @@ namespace {
 auto MakeUSBIPDevice(
   uint32_t busId,
   uint32_t deviceId,
-  const FredEmmott_USBIP_VirtPP_Device_DeviceConfig& config) {
+  const FredEmmott_USBSpec_DeviceDescriptor& deviceDescriptor,
+  uint8_t numInterfaces) {
   USBIP::Device ret{
     .mBusNum = busId,
     .mDevNum = deviceId,
     .mSpeed = USBIP::Speed::Full,
-    .mVendorID = config.mVendorID,
-    .mProductID = config.mProductID,
-    .mDeviceVersion = config.mDeviceVersion,
-    .mDeviceClass = config.mDeviceClass,
-    .mDeviceSubClass = config.mDeviceSubClass,
-    .mDeviceProtocol = config.mDeviceProtocol,
-    .mConfigurationValue = config.mConfigurationValue,
-    .mNumConfigurations = config.mNumConfigurations,
-    .mNumInterfaces = config.mNumInterfaces,
+    .mVendorID = deviceDescriptor.idVendor,
+    .mProductID = deviceDescriptor.idProduct,
+    .mDeviceVersion = deviceDescriptor.bcdDevice,
+    .mDeviceClass = deviceDescriptor.bDeviceClass,
+    .mDeviceSubClass = deviceDescriptor.bDeviceSubClass,
+    .mDeviceProtocol = deviceDescriptor.bDeviceProtocol,
+    .mConfigurationValue = 1,
+    .mNumConfigurations = deviceDescriptor.bNumConfigurations,
+    .mNumInterfaces = numInterfaces
   };
   std::format_to(
     ret.mPath,
@@ -242,18 +243,19 @@ std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnDevListOp() {
     return ret;
   for (auto&& [busIdx, bus]: std::views::enumerate(mBusses)) {
     for (auto&& [deviceIdx, device]: std::views::enumerate(bus)) {
-      const auto& config = device.mConfig;
+      const auto& config = device.mDescriptor;
       const auto usbipDevice = MakeUSBIPDevice(
         busIdx + 1,
         deviceIdx + 1,
-        config);
+        config,
+        device.mInterfaces.size());
       if (const auto ret = SendAll(mClientSocket, usbipDevice); !ret)
         return ret;
       for (auto&& iface: device.mInterfaces) {
         const USBIP::Interface wireInterface{
-          .mClass = iface.mClass,
-          .mSubClass = iface.mSubClass,
-          .mProtocol = iface.mProtocol,
+          .mClass = iface.bInterfaceClass,
+          .mSubClass = iface.bInterfaceSubClass,
+          .mProtocol = iface.bInterfaceProtocol,
         };
         if (const auto ret = SendAll(mClientSocket, wireInterface); !ret)
           return ret;
@@ -276,7 +278,8 @@ std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnImportOp(
       const auto usbipDevice = MakeUSBIPDevice(
         busIdx + 1,
         deviceIdx + 1,
-        device.mConfig);
+        device.mDescriptor,
+        device.mInterfaces.size());
 
       if (const auto ret = SendAll(
         mClientSocket,

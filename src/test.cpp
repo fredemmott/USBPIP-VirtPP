@@ -56,36 +56,40 @@ const uint8_t ReportDescriptor[] = {
   0xC0// End Collection
 };
 
-// TODO: switch these around. Use LE (USB) byte order as the source of truth
-constexpr USB::DeviceDescriptor MouseDeviceDescriptor {
-  .mDescriptorType = 0x01,// DEVICE
-  .mUSBVersion = 0x02'00,
-  .mMaxPacketSize0 = 0x40,
-  .mVendorID = 0x4242,
-  .mProductID = 0x4242,
-  .mDeviceVersion = 0x01'00,
-  .mManufacturerStringIndex
+constexpr FredEmmott_USBSpec_DeviceDescriptor MouseDeviceDescriptor{
+  .bLength = FredEmmott_USBSpec_DeviceDescriptor_Size,
+  .bDescriptorType = 0x01,// DEVICE
+  .bcdUSB = 0x02'00,
+  .bMaxPacketSize0 = 0x40,
+  .idVendor = 0x4242,
+  .idProduct = 0x4242,
+  .bcdDevice = 0x01'00,
+  .iManufacturer
   = std::to_underlying(USBStrings::Indices::Manufacturer),
-  .mProductStringIndex = std::to_underlying(USBStrings::Indices::Product),
-  .mSerialNumberStringIndex
+  .iProduct = std::to_underlying(USBStrings::Indices::Product),
+  .iSerialNumber
   = std::to_underlying(USBStrings::Indices::SerialNumber),
-  .mNumConfigurations = 1,
+  .bNumConfigurations = 1,
 };
 
 constexpr struct MouseConfigurationDescriptor {
-  USB::ConfigurationDescriptor mConfiguration{
-    .mTotalLength = sizeof(MouseConfigurationDescriptor),
-    .mNumInterfaces = 1,
-    .mConfigurationValue = 1,
-    .mConfiguration = 0,
-    .mAttributes = 0x80 | 0x20,// bus-powered, remote wakeup
-    .mMaxPower = 0x32,// 100ma
+  FredEmmott_USBSpec_ConfigurationDescriptor mConfiguration{
+    .bLength = FredEmmott_USBSpec_ConfigurationDescriptor_Size,
+    .bDescriptorType = 0x02,
+    .wTotalLength = sizeof(MouseConfigurationDescriptor),
+    .bNumInterfaces = 1,
+    .bConfigurationValue = 1,
+    .iConfiguration = 0,
+    .bmAttributes = 0x80 | 0x20,// bus-powered, remote wakeup
+    .MaxPower = 0x32,// 100ma
   };
-  USB::InterfaceDescriptor mInterface {
-    .mNumEndpoints = 1,
-    .mClass = 3,// HID
-    .mInterfaceStringIndex = std::to_underlying(USBStrings::Indices::Interface),
-    };
+  FredEmmott_USBSpec_InterfaceDescriptor mInterface {
+    .bLength = FredEmmott_USBSpec_InterfaceDescriptor_Size,
+    .bDescriptorType = 0x04,
+    .bNumEndpoints = 1,
+    .bInterfaceClass = 3,// HID
+    .iInterface = std::to_underlying(USBStrings::Indices::Interface),
+  };
   USB::HIDDescriptor mHID{
     .mLength = sizeof(USB::HIDDescriptor) + sizeof(USB::HIDDescriptor::Report),
     .mHIDSpecVersion = 0x01'11,
@@ -95,11 +99,13 @@ constexpr struct MouseConfigurationDescriptor {
     .mType = 0x22,// HID Report
     .mLength = sizeof(ReportDescriptor),
   };
-  USB::EndpointDescriptor mEndpoint{
-    .mEndpointAddress = 0x80 | 0x01,// In, endpoint 1
-    .mAttributes = 0x03,// interrupt
-    .mMaxPacketSize = 0x00'04,
-    .mInterval = 0x0a,// 10ms polling
+  FredEmmott_USBSpec_EndpointDescriptor mEndpoint{
+    .bLength = FredEmmott_USBSpec_EndPointDescriptor_Size,
+    .bDescriptorType = 0x05,
+    .bEndpointAddress = 0x80 | 0x01,// In, endpoint 1
+    .bmAttributes = 0x03,// interrupt
+    .wMaxPacketSize = 0x00'04,
+    .bInterval = 0x0a,// 10ms polling
   };
 } MouseConfigurationDescriptor;
 
@@ -240,28 +246,12 @@ int main() {
   const FredEmmott_USBIP_VirtPP_Device_Callbacks callbacks{
     .OnInputRequest = &OnInputRequest,
   };
-  const FredEmmott_USBIP_VirtPP_Device_DeviceConfig deviceConfig{
-    .mVendorID = MouseDeviceDescriptor.mVendorID,
-    .mProductID = MouseDeviceDescriptor.mProductID,
-    .mDeviceClass = MouseDeviceDescriptor.mClass,
-    .mDeviceSubClass = MouseDeviceDescriptor.mSubClass,
-    .mDeviceProtocol = MouseDeviceDescriptor.mProtocol,
-    .mConfigurationValue = MouseConfigurationDescriptor.mConfiguration.
-    mConfigurationValue,
-    .mNumConfigurations = 1,
-    .mNumInterfaces = 1,
-  };
-  constexpr auto& MouseInterface = MouseConfigurationDescriptor.mInterface;
-  const FredEmmott_USBIP_VirtPP_Device_InterfaceConfig interfaceConfig{
-    .mClass = MouseInterface.mClass,
-    .mSubClass = MouseInterface.mSubClass,
-    .mProtocol = MouseInterface.mProtocol,
-  };
   const FredEmmott_USBIP_VirtPP_Device_InitData deviceInit{
     .mAutoAttach = true,
     .mCallbacks = &callbacks,
-    .mDeviceConfig = &deviceConfig,
-    .mInterfaceConfigs = &interfaceConfig,
+    .mDeviceDescriptor = &MouseDeviceDescriptor,
+    .mNumInterfaces = 1,
+    .mInterfaceDescriptors = &MouseConfigurationDescriptor.mInterface,
   };
   const auto device = FredEmmott_USBIP_VirtPP_Device_Create(
     instance,

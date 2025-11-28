@@ -112,7 +112,7 @@ FredEmmott_USBIP_VirtPP_Device::FredEmmott_USBIP_VirtPP_Device(
     instance->LogError("Can't create device without callbacks");
     return;
   }
-  if (!initData->mDeviceConfig) {
+  if (!initData->mDeviceDescriptor) {
     instance->LogError("Can't create device without device config");
     return;
   }
@@ -125,9 +125,9 @@ FredEmmott_USBIP_VirtPP_Device::FredEmmott_USBIP_VirtPP_Device(
     return;
   }
 
-  mConfig = *initData->mDeviceConfig;
-  for (auto i = 0; i < mConfig.mNumInterfaces; ++i) {
-    mInterfaces.emplace_back(initData->mInterfaceConfigs[i]);
+  mDescriptor = *initData->mDeviceDescriptor;
+  for (auto i = 0; i < initData->mNumInterfaces; ++i) {
+    mInterfaces.emplace_back(initData->mInterfaceDescriptors[i]);
   }
   mUserData = initData->mUserData;
   if (instance->mBusses.empty()) {

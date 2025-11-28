@@ -24,8 +24,8 @@ struct FredEmmott_USBIP_VirtPP_Device final {
   FredEmmott_USBIP_VirtPP_InstanceHandle mInstance{};
 
   FredEmmott_USBIP_VirtPP_Device_Callbacks mCallbacks{};
-  FredEmmott_USBIP_VirtPP_Device_DeviceConfig mConfig{};
-  std::vector<FredEmmott_USBIP_VirtPP_Device_InterfaceConfig> mInterfaces{};
+  FredEmmott_USBSpec_DeviceDescriptor mDescriptor{};
+  std::vector<FredEmmott_USBSpec_InterfaceDescriptor> mInterfaces{};
 
   void* mUserData{};
 
