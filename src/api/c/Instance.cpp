@@ -376,8 +376,9 @@ void FREDEMMOTT_USBIP_VirtPP_Instance::AutoAttach() {
       if (!device.mAutoAttach) {
         continue;
       }
-      Log("Auto-attaching device {}:{}", i + 1, j + 1);
-      std::ignore = device.Attach();
+      const auto busID = std::format("{}-{}", i + 1, j + 1);
+      Log("Auto-attaching device {}", busID);
+      std::ignore = device.Attach(busID);
     }
   }
 }

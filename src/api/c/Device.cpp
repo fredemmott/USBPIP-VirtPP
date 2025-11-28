@@ -160,7 +160,9 @@ FREDEMMOTT_USBIP_VirtPP_Result FREDEMMOTT_USBIP_VirtPP_Device_Attach(
     S_OK));
 }
 
-std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Device::Attach() const {
+std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Device::Attach(
+  const std::string_view busID
+  ) const {
   // I decided to directly use the IOCTL primarily because of the use of C++
   // STL containers in the libusbip API definition; lesser concerns are the
   // use of the C++ ABI more broadly as opposed to C API/ABI, and tying it
@@ -168,10 +170,17 @@ std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Device::Attach() const {
   //
   // I love the modern C++ features, but I don't want to either build it myself
   // or tie to the same C++ version/API version for this one IOCTL.
-  const auto busID = GetBusID();
-  if (!busID) {
-    return std::unexpected{HRESULT_FROM_WIN32(ERROR_OBJECT_NOT_FOUND)};
+  AttachIOCTL ioctlData{};
+  std::format_to(ioctlData.mService, "{}", mInstance->GetPortNumber());
+
+  if (!busID.empty()) {
+    strncpy_s(ioctlData.mBusID, busID.data(), busID.size());
+  } else if (const auto generated = GetBusID()) {
+    strncpy_s(ioctlData.mBusID, generated->data(), generated->size());
+  } else {
+    return std::unexpected{HRESULT_FROM_WIN32(ERROR_INVALID_INDEX)};
   }
+
 
   const auto targetPath = GetUSBIPWin32Path();
   if (!targetPath) {
@@ -192,10 +201,6 @@ std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Device::Attach() const {
     return std::unexpected{HRESULT_FROM_WIN32(GetLastError())};
   }
 
-  AttachIOCTL ioctlData{};
-  strncpy_s(ioctlData.mBusID, busID->c_str(), busID->size());
-  std::format_to(ioctlData.mService, "{}", mInstance->GetPortNumber());
-
   DWORD bytesReturned{};
   constexpr auto WritableLength = offsetof(AttachIOCTL, mPortOutput) + sizeof(
     AttachIOCTL::mPortOutput);
@@ -210,7 +215,7 @@ std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Device::Attach() const {
     nullptr)) {
     __debugbreak();
   }
-  mInstance->Log("+ Attached to local server");
+  mInstance->Log("+ Attached device {} to local server", ioctlData.mBusID);
 
   return {};
 }
