@@ -336,7 +336,7 @@ std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Instance::OnSubmitRequest(
     constexpr auto SetConfiguration = 0x09;
     switch (request.mSetup.mRequest) {
       case SetConfiguration: // no-op, we only support 1 configuration
-        if (const auto ret = FREDEMMOTT_USBIP_VirtPP_Request_SendReply(&apiRequest, 0, nullptr, 0); !FREDEMMOTT_USBIP_VirtPP_SUCCEEDED(ret)) [[unlikely]] {
+        if (const auto ret = FREDEMMOTT_USBIP_VirtPP_Request_SendReply(&apiRequest, nullptr, 0); !FREDEMMOTT_USBIP_VirtPP_SUCCEEDED(ret)) [[unlikely]] {
           return std::unexpected { static_cast<HRESULT>(ret) };
         }
         return {};
@@ -349,7 +349,7 @@ std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Instance::OnSubmitRequest(
   if ((request.mSetup.mRequestType & 0x20) == 0x20 && request.mSetup.mRequest == 0x0a) {
     // SET_IDLE
     // We don't suport repeating.
-    if (const auto ret = FREDEMMOTT_USBIP_VirtPP_Request_SendReply(&apiRequest, 0, nullptr, 0); !FREDEMMOTT_USBIP_VirtPP_SUCCEEDED(ret)) [[unlikely]] {
+    if (const auto ret = FREDEMMOTT_USBIP_VirtPP_Request_SendReply(&apiRequest, nullptr, 0); !FREDEMMOTT_USBIP_VirtPP_SUCCEEDED(ret)) [[unlikely]] {
       return std::unexpected { static_cast<HRESULT>(ret) };
     }
     return {};

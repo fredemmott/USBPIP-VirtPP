@@ -35,14 +35,12 @@ void* FREDEMMOTT_USBIP_VirtPP_Request_GetDeviceUserData(
 
 FREDEMMOTT_USBIP_VirtPP_Result FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
   const FREDEMMOTT_USBIP_VirtPP_Request* const request,
-  const uint32_t status,
   const void* const data,
   const size_t dataSize) {
   const auto socket = request->mDevice->mInstance->mClientSocket;
   const auto actualLength
     = std::min<uint32_t>(dataSize, request->mTransferBufferLength);
   USBIP::USBIP_RET_SUBMIT response{
-    .mStatus = status,
     .mActualLength = actualLength,
   };
   response.mHeader.mSequenceNumber = request->mSequenceNumber;

@@ -137,14 +137,12 @@ extern "C" FREDEMMOTT_USBIP_VirtPP_Result OnInputRequest(
         std::println("   - Responding with DEVICE Descriptor.");
         return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
           handle,
-          0,
           MouseDeviceDescriptor);
       }
       if (descriptorType == 0x02) {
         std::println("   - Responding with CONFIGURATION Descriptor.");
         return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
           handle,
-          0,
           MouseConfigurationDescriptor);
       }
       if (descriptorType == 0x03) {
@@ -154,33 +152,28 @@ extern "C" FREDEMMOTT_USBIP_VirtPP_Result OnInputRequest(
             std::println("   - Responding with LANGID String Descriptor.");
             return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
               handle,
-              0,
               USBStrings::LangID);
           case USBStrings::Indices::Manufacturer:
             std::println(
               "   - Responding with MANUFACTURER String Descriptor.");
             return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
               handle,
-              0,
               USBStrings::Manufacturer);
           case USBStrings::Indices::Product:
             std::println("   - Responding with PRODUCT String Descriptor.");
             return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
               handle,
-              0,
               USBStrings::Product);
           case USBStrings::Indices::SerialNumber:
             std::println(
               "   - Responding with SERIALNUMBER String Descriptor.");
             return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
               handle,
-              0,
               USBStrings::SerialNumber);
           case USBStrings::Indices::Interface:
             std::println("   - Responding with INTERFACE String Descriptor.");
             return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
               handle,
-              0,
               USBStrings::Interface);
         }
         // TODO
@@ -193,7 +186,6 @@ extern "C" FREDEMMOTT_USBIP_VirtPP_Result OnInputRequest(
         std::println("   - Responding with HID REPORT Descriptor bytes).");
         return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
           handle,
-          0,
           ReportDescriptor);
       }
     }
@@ -205,7 +197,6 @@ extern "C" FREDEMMOTT_USBIP_VirtPP_Result OnInputRequest(
         std::println("   - Responding with HID REPORT Descriptor bytes.");
         return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
           handle,
-          0,
           ReportDescriptor);
       }
       // TODO
@@ -223,7 +214,7 @@ extern "C" FREDEMMOTT_USBIP_VirtPP_Result OnInputRequest(
 
   if (endpoint == 1) {
     const uint8_t mouseReport[] = {0x00, 0x01, 0x01};
-    return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(handle, 0, mouseReport);
+    return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(handle, mouseReport);
   }
 
   // Unhandled endpoint or direction (e.g., EP1 OUT, which is not a standard

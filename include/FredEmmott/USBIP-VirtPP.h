@@ -127,7 +127,6 @@ void* FREDEMMOTT_USBIP_VirtPP_Request_GetInstanceUserData(
 /** If you're using C++, there's an overload that takes `const T& data`, and infers the size */
 FREDEMMOTT_USBIP_VirtPP_Result FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
   FREDEMMOTT_USBIP_VirtPP_RequestHandle,
-  uint32_t status,
   void const* data,
   size_t dataSize);
 
@@ -139,11 +138,9 @@ FREDEMMOTT_USBIP_VirtPP_Result FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
 template <class T>
 FREDEMMOTT_USBIP_VirtPP_Result FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
   FREDEMMOTT_USBIP_VirtPP_RequestHandle handle,
-  const uint32_t status,
   const T& data) {
   return FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
     handle,
-    status,
     &data,
     sizeof(T));
 }
