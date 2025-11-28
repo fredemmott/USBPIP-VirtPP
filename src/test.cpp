@@ -1,22 +1,14 @@
-#include "api-detail.hpp"
-#include "send-recv.hpp"
-
 #include <FredEmmott/USBIP-VirtPP.h>
 #include <FredEmmott/USBIP.hpp>
 #include <FredEmmott/USBSpec.hpp>
 
-#include <expected>
 #include <print>
-
-#define NOMINMAX
 #include <functional>
-
-#include <winsock2.h>
-#include <ws2tcpip.h>
+#include <future>
+#include <wil/resource.h>
 
 #pragma comment(lib, "ws2_32.lib")
 
-using namespace FredEmmott::USBVirtPP;
 namespace USB = FredEmmott::USBSpec;
 namespace USBIP = FredEmmott::USBIP;
 
@@ -275,10 +267,10 @@ int main() {
   const auto destroyInstance = wil::scope_exit(
     std::bind_front(&FREDEMMOTT_USBIP_VirtPP_Instance_Destroy, instance));
 
-  const FREDEMMOTT_USBIP_VirtPP_Device_Callbacks callbacks {
+  const FREDEMMOTT_USBIP_VirtPP_Device_Callbacks callbacks{
     .OnInputRequest = &OnInputRequest,
   };
-  const FREDEMMOTT_USBIP_VirtPP_Device_DeviceConfig deviceConfig {
+  const FREDEMMOTT_USBIP_VirtPP_Device_DeviceConfig deviceConfig{
     .mVendorID = MouseDeviceDescriptor.mVendorID,
     .mProductID = MouseDeviceDescriptor.mProductID,
     .mDeviceClass = MouseDeviceDescriptor.mClass,
@@ -288,18 +280,22 @@ int main() {
     .mNumConfigurations = 1,
     .mNumInterfaces = 1,
   };
-  const FREDEMMOTT_USBIP_VirtPP_Device_InterfaceConfig interfaceConfig {
+  const FREDEMMOTT_USBIP_VirtPP_Device_InterfaceConfig interfaceConfig{
     .mClass = MouseInterface.mClass,
     .mSubClass = MouseInterface.mSubClass,
     .mProtocol = MouseInterface.mProtocol,
   };
-  const FREDEMMOTT_USBIP_VirtPP_Device_InitData deviceInit {
+  const FREDEMMOTT_USBIP_VirtPP_Device_InitData deviceInit{
+    .mAutoAttach = true,
     .mCallbacks = &callbacks,
     .mDeviceConfig = &deviceConfig,
     .mInterfaceConfigs = &interfaceConfig,
   };
-  const auto device = FREDEMMOTT_USBIP_VirtPP_Device_Create(instance, &deviceInit);
-  const auto destroyDevice = wil::scope_exit(std::bind_front(&FREDEMMOTT_USBIP_VirtPP_Device_Destroy, device));
+  const auto device = FREDEMMOTT_USBIP_VirtPP_Device_Create(
+    instance,
+    &deviceInit);
+  const auto destroyDevice = wil::scope_exit(
+    std::bind_front(&FREDEMMOTT_USBIP_VirtPP_Device_Destroy, device));
 
   FREDEMMOTT_USBIP_VirtPP_Instance_Run(instance);
 

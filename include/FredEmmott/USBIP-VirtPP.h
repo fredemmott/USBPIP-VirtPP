@@ -99,6 +99,7 @@ struct FREDEMMOTT_USBIP_VirtPP_Device_DeviceConfig {
 
 struct FREDEMMOTT_USBIP_VirtPP_Device_InitData {
   void* mUserData;
+  bool mAutoAttach;
   FREDEMMOTT_USBIP_VirtPP_Device_Callbacks const* mCallbacks;
   FREDEMMOTT_USBIP_VirtPP_Device_DeviceConfig const* mDeviceConfig;
   FREDEMMOTT_USBIP_VirtPP_Device_InterfaceConfig const* mInterfaceConfigs;
@@ -109,7 +110,7 @@ struct FREDEMMOTT_USBIP_VirtPP_Device_InitData {
 FREDEMMOTT_USBIP_VirtPP_DeviceHandle FREDEMMOTT_USBIP_VirtPP_Device_Create(
   FREDEMMOTT_USBIP_VirtPP_InstanceHandle,
   FREDEMMOTT_USBIP_VirtPP_Device_InitData const*);
-
+FREDEMMOTT_USBIP_VirtPP_Result FREDEMMOTT_USBIP_VirtPP_Device_Attach(FREDEMMOTT_USBIP_VirtPP_DeviceHandle);
 void FREDEMMOTT_USBIP_VirtPP_Device_Destroy(FREDEMMOTT_USBIP_VirtPP_DeviceHandle);
 
 /****** Request:: methods *****/

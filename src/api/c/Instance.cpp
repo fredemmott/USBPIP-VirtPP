@@ -1,13 +1,14 @@
 // Copyright 2025 Fred Emmott <fred@fredemmott.com>
 // SPDX-License-Identifier: MIT
 
-#include "api-detail.hpp"
+#include "detail.hpp"
 #include "send-recv.hpp"
 
 #include <FredEmmott/USBIP-VirtPP.h>
 #include <FredEmmott/USBIP.hpp>
 
 #include <algorithm>
+#include <future>
 #include <print>
 #include <ranges>
 
@@ -128,6 +129,7 @@ void FREDEMMOTT_USBIP_VirtPP_Instance_Run(
 }
 
 void FREDEMMOTT_USBIP_VirtPP_Instance::Run() {
+  const auto future = std::async(std::launch::async, &FREDEMMOTT_USBIP_VirtPP_Instance::AutoAttach, this);
   while (!mStopSource.stop_requested()) {
     Log("Listening for USB/IP connections on port {}", this->GetPortNumber());
     const wil::unique_socket clientSocket{
@@ -368,6 +370,18 @@ std::expected<void, HRESULT> FREDEMMOTT_USBIP_VirtPP_Instance::OnUnlinkRequest(
   return SendAll(mClientSocket, response);
 }
 
+void FREDEMMOTT_USBIP_VirtPP_Instance::AutoAttach() {
+  for (auto&& [i, bus]: std::views::enumerate(mBusses)) {
+    for (auto&& [j, device]: std::views::enumerate(bus)) {
+      if (!device.mAutoAttach) {
+        continue;
+      }
+      Log("Auto-attaching device {}:{}", i + 1, j + 1);
+      std::ignore = device.Attach();
+    }
+  }
+}
+
 void FREDEMMOTT_USBIP_VirtPP_Instance_RequestStop(
   const FREDEMMOTT_USBIP_VirtPP_InstanceHandle handle) {
   handle->mStopSource.request_stop();
@@ -378,130 +392,12 @@ void FREDEMMOTT_USBIP_VirtPP_Instance_Destroy(
   delete handle;
 }
 
-FREDEMMOTT_USBIP_VirtPP_InstanceHandle FREDEMMOTT_USBIP_VirtPP_Device_GetInstance(
-  const FREDEMMOTT_USBIP_VirtPP_DeviceHandle handle) {
-  return handle->mInstance;
-}
-
-FREDEMMOTT_USBIP_VirtPP_InstanceHandle FREDEMMOTT_USBIP_VirtPP_Request_GetInstance(
-  const FREDEMMOTT_USBIP_VirtPP_RequestHandle handle) {
-  return handle->mDevice->mInstance;
-}
-
-FREDEMMOTT_USBIP_VirtPP_DeviceHandle FREDEMMOTT_USBIP_VirtPP_Request_GetDevice(
-  const FREDEMMOTT_USBIP_VirtPP_RequestHandle handle) {
-  return handle->mDevice;
-}
-
 void* FREDEMMOTT_USBIP_VirtPP_Instance_GetUserData(
   const FREDEMMOTT_USBIP_VirtPP_InstanceHandle handle) {
   return handle->mInitData.mUserData;
 }
 
-void* FREDEMMOTT_USBIP_VirtPP_Device_GetInstanceUserData(
-  const FREDEMMOTT_USBIP_VirtPP_DeviceHandle handle) {
-  return handle->mInstance->mInitData.mUserData;
-}
-
-void* FREDEMMOTT_USBIP_VirtPP_Request_GetInstanceUserData(
-  FREDEMMOTT_USBIP_VirtPP_RequestHandle handle) {
-  return handle->mDevice->mInstance->mInitData.mUserData;
-}
-
-void* FREDEMMOTT_USBIP_VirtPP_Device_GetUserData(
-  const FREDEMMOTT_USBIP_VirtPP_DeviceHandle handle) {
-  return handle->mUserData;
-}
-
-void* FREDEMMOTT_USBIP_VirtPP_Request_GetDeviceUserData(
-  const FREDEMMOTT_USBIP_VirtPP_RequestHandle handle) {
-  return handle->mDevice->mUserData;
-}
-
 void FREDEMMOTT_USBIP_VirtPP_RequestStopInstance(
   FREDEMMOTT_USBIP_VirtPP_InstanceHandle instance) {
   instance->mStopSource.request_stop();
-}
-
-FREDEMMOTT_USBIP_VirtPP_Result FREDEMMOTT_USBIP_VirtPP_Request_SendReply(
-  const FREDEMMOTT_USBIP_VirtPP_Request* const request,
-  const uint32_t status,
-  const void* const data,
-  const size_t dataSize) {
-  const auto socket = request->mDevice->mInstance->mClientSocket;
-  const auto actualLength
-    = std::min<uint32_t>(dataSize, request->mTransferBufferLength);
-  USBIP::USBIP_RET_SUBMIT response{
-    .mStatus = status,
-    .mActualLength = actualLength,
-  };
-  response.mHeader.mSequenceNumber = request->mSequenceNumber;
-  if (const auto ret = SendAll(socket, response); !ret)
-  [[unlikely]] {
-    return std::bit_cast<FREDEMMOTT_USBIP_VirtPP_Result>(ret.error());
-  }
-  if (actualLength == 0) {
-    return FREDEMMOTT_USBIP_VirtPP_SUCCESS;
-  }
-
-  if (const auto ret = SendAll(socket, data, actualLength); !ret)
-  [[unlikely]] {
-    return std::bit_cast<FREDEMMOTT_USBIP_VirtPP_Result>(ret.error());
-  }
-
-  return FREDEMMOTT_USBIP_VirtPP_SUCCESS;
-}
-
-FREDEMMOTT_USBIP_VirtPP_Device::FREDEMMOTT_USBIP_VirtPP_Device(
-  FREDEMMOTT_USBIP_VirtPP_InstanceHandle instance,
-  const FREDEMMOTT_USBIP_VirtPP_Device_InitData* initData)
-  : mInstance(instance) {
-  if (!instance) {
-    return;
-  }
-  if (!initData) {
-    instance->LogError("Can't create device without init data");
-    return;
-  }
-
-  if (!initData->mCallbacks) {
-    instance->LogError("Can't create device without callbacks");
-    return;
-  }
-  if (!initData->mDeviceConfig) {
-    instance->LogError("Can't create device without device config");
-    return;
-  }
-
-  mCallbacks = *initData->mCallbacks;
-  if (!mCallbacks.OnInputRequest) {
-    instance->LogError("Can't create device without OnInputRequest callback");
-    mInstance = nullptr;
-    return;
-  }
-
-  mConfig = *initData->mDeviceConfig;
-  for (auto i = 0; i < mConfig.mNumInterfaces; ++i) {
-    mInterfaces.emplace_back(initData->mInterfaceConfigs[i]);
-  }
-  mUserData = initData->mUserData;
-  if (instance->mBusses.empty()) {
-    instance->mBusses.emplace_back();
-  }
-  instance->mBusses.back().emplace_back(*this);
-}
-
-FREDEMMOTT_USBIP_VirtPP_DeviceHandle FREDEMMOTT_USBIP_VirtPP_Device_Create(
-  const FREDEMMOTT_USBIP_VirtPP_InstanceHandle instance,
-  const FREDEMMOTT_USBIP_VirtPP_Device_InitData* initData) {
-  auto ret = std::make_unique<FREDEMMOTT_USBIP_VirtPP_Device>(instance, initData);
-  if (!ret->mInstance) {
-    return nullptr;
-  }
-  return ret.release();
-}
-
-void FREDEMMOTT_USBIP_VirtPP_Device_Destroy(
-  const FREDEMMOTT_USBIP_VirtPP_DeviceHandle handle) {
-  delete handle;
 }

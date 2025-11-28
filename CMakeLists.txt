@@ -16,12 +16,16 @@ add_executable(
         include/FredEmmott/USBIP.hpp
         include/FredEmmott/USBSpec.hpp
         include/FredEmmott/USBIP-VirtPP.h
-        src/api-c.cpp
-        src/api-detail.hpp
-        src/send-recv.cpp src/send-recv.hpp
+        src/api/c/detail.hpp
+        src/api/c/Device.cpp
+        src/api/c/Instance.cpp
+        src/api/c/Request.cpp
+        src/api/c/send-recv.cpp
+        src/api/c/send-recv.hpp
         src/test.cpp
 )
 target_include_directories(usbip_virtpp PRIVATE include/)
+target_compile_options(usbip_virtpp PRIVATE "/EHsc")
 
 find_package(wil CONFIG REQUIRED)
 target_link_libraries(usbip_virtpp PRIVATE WIL::WIL)

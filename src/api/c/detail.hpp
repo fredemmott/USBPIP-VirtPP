@@ -5,6 +5,8 @@
 #include <FredEmmott/USBIP-VirtPP.h>
 #include <FredEmmott/USBIP.hpp>
 #include <stop_token>
+#include <optional>
+#include <expected>
 
 #include <vector>
 
@@ -17,6 +19,8 @@
 #include <print>
 
 struct FREDEMMOTT_USBIP_VirtPP_Device final {
+  bool mAutoAttach {};
+
   FREDEMMOTT_USBIP_VirtPP_InstanceHandle mInstance{};
 
   FREDEMMOTT_USBIP_VirtPP_Device_Callbacks mCallbacks{};
@@ -29,6 +33,11 @@ struct FREDEMMOTT_USBIP_VirtPP_Device final {
   explicit FREDEMMOTT_USBIP_VirtPP_Device(FREDEMMOTT_USBIP_VirtPP_InstanceHandle,
     const FREDEMMOTT_USBIP_VirtPP_Device_InitData*);
   ~FREDEMMOTT_USBIP_VirtPP_Device() = default;
+
+  std::expected<void, HRESULT> Attach() const;
+
+private:
+  std::optional<std::string> GetBusID() const;
 };
 
 struct FREDEMMOTT_USBIP_VirtPP_Instance final {
@@ -81,6 +90,8 @@ private:
     FREDEMMOTT_USBIP_VirtPP_Request apiRequest);
   std::expected<void, HRESULT> OnSubmitRequest(const FredEmmott::USBIP::USBIP_CMD_SUBMIT&);
   std::expected<void, HRESULT> OnUnlinkRequest(const FredEmmott::USBIP::USBIP_CMD_UNLINK&);
+
+  void AutoAttach();
 };
 
 struct FREDEMMOTT_USBIP_VirtPP_Request {
