@@ -1,0 +1,7 @@
+{
+  "name": "usbip-virtpp",
+  "version": "0.0.1",
+  "dependencies": [
+    "wil"
+  ]
+}
