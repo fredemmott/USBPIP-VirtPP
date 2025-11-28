@@ -15,7 +15,7 @@ add_executable(
         usbip_virtpp
         include/FredEmmott/USBIP.hpp
         include/FredEmmott/USBSpec.hpp
-        include/FredEmmott/USB-VirtPP.h
+        include/FredEmmott/USBIP-VirtPP.h
         src/api-c.cpp
         src/api-detail.hpp
         src/send-recv.cpp src/send-recv.hpp

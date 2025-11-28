@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 #pragma once
 
-#include <FredEmmott/USB-VirtPP.h>
+#include <FredEmmott/USBIP-VirtPP.h>
 #include <FredEmmott/USBIP.hpp>
 #include <stop_token>
 
@@ -16,25 +16,25 @@
 #include <format>
 #include <print>
 
-struct FREDEMMOTT_USB_VIRTPP_Device final {
-  FREDEMMOTT_USB_VIRTPP_InstanceHandle mInstance{};
+struct FREDEMMOTT_USBIP_VirtPP_Device final {
+  FREDEMMOTT_USBIP_VirtPP_InstanceHandle mInstance{};
 
-  FREDEMMOTT_USB_VIRTPP_Device_Callbacks mCallbacks{};
-  FREDEMMOTT_USB_VIRTPP_Device_DeviceConfig mConfig{};
-  std::vector<FREDEMMOTT_USB_VIRTPP_Device_InterfaceConfig> mInterfaces{};
+  FREDEMMOTT_USBIP_VirtPP_Device_Callbacks mCallbacks{};
+  FREDEMMOTT_USBIP_VirtPP_Device_DeviceConfig mConfig{};
+  std::vector<FREDEMMOTT_USBIP_VirtPP_Device_InterfaceConfig> mInterfaces{};
 
   void* mUserData{};
 
-  FREDEMMOTT_USB_VIRTPP_Device() = delete;
-  explicit FREDEMMOTT_USB_VIRTPP_Device(FREDEMMOTT_USB_VIRTPP_InstanceHandle,
-    const FREDEMMOTT_USB_VIRTPP_Device_InitData*);
-  ~FREDEMMOTT_USB_VIRTPP_Device() = default;
+  FREDEMMOTT_USBIP_VirtPP_Device() = delete;
+  explicit FREDEMMOTT_USBIP_VirtPP_Device(FREDEMMOTT_USBIP_VirtPP_InstanceHandle,
+    const FREDEMMOTT_USBIP_VirtPP_Device_InitData*);
+  ~FREDEMMOTT_USBIP_VirtPP_Device() = default;
 };
 
-struct FREDEMMOTT_USB_VIRTPP_Instance final {
-  using Bus = std::vector<FREDEMMOTT_USB_VIRTPP_Device>;
+struct FREDEMMOTT_USBIP_VirtPP_Instance final {
+  using Bus = std::vector<FREDEMMOTT_USBIP_VirtPP_Device>;
 
-  FREDEMMOTT_USB_VIRTPP_Instance_InitData mInitData{};
+  FREDEMMOTT_USBIP_VirtPP_Instance_InitData mInitData{};
 
   std::stop_source mStopSource;
 
@@ -43,9 +43,9 @@ struct FREDEMMOTT_USB_VIRTPP_Instance final {
 
   std::vector<Bus> mBusses{};
 
-  FREDEMMOTT_USB_VIRTPP_Instance() = delete;
-  explicit FREDEMMOTT_USB_VIRTPP_Instance(const FREDEMMOTT_USB_VIRTPP_Instance_InitData*);
-  ~FREDEMMOTT_USB_VIRTPP_Instance();
+  FREDEMMOTT_USBIP_VirtPP_Instance() = delete;
+  explicit FREDEMMOTT_USBIP_VirtPP_Instance(const FREDEMMOTT_USBIP_VirtPP_Instance_InitData*);
+  ~FREDEMMOTT_USBIP_VirtPP_Instance();
   uint16_t GetPortNumber() const;
 
   template<class... Args>
@@ -54,17 +54,17 @@ struct FREDEMMOTT_USB_VIRTPP_Instance final {
       const auto formatted = std::format(fmt, std::forward<Args>(args)...);
       callback(severity, formatted.c_str(), formatted.size());
     } else {
-      std::println((severity >= FREDEMMOTT_USB_VIRTPP_LogSeverity_Error) ? stderr : stdout, fmt, std::forward<Args>(args)...);
+      std::println((severity >= FREDEMMOTT_USBIP_VirtPP_LogSeverity_Error) ? stderr : stdout, fmt, std::forward<Args>(args)...);
     }
   }
   template<class... Args>
   void LogError(std::format_string<Args...> fmt, Args&&... args) const {
-    LogSeverity(FREDEMMOTT_USB_VIRTPP_LogSeverity_Error, fmt, std::forward<Args>(args)...);
+    LogSeverity(FREDEMMOTT_USBIP_VirtPP_LogSeverity_Error, fmt, std::forward<Args>(args)...);
   }
 
   template<class... Args>
   void Log(std::format_string<Args...> fmt, Args&&... args) const {
-    LogSeverity(FREDEMMOTT_USB_VIRTPP_LogSeverity_Default, fmt, std::forward<Args>(args)...);
+    LogSeverity(FREDEMMOTT_USBIP_VirtPP_LogSeverity_Default, fmt, std::forward<Args>(args)...);
   }
 
   void Run();
@@ -76,15 +76,15 @@ private:
   std::expected<void, HRESULT> OnDevListOp();
   std::expected<void, HRESULT> OnImportOp(const FredEmmott::USBIP::OP_REQ_IMPORT&);
   std::expected<void, HRESULT> OnInputRequest(
-    FREDEMMOTT_USB_VIRTPP_Device& device,
+    FREDEMMOTT_USBIP_VirtPP_Device& device,
     const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request,
-    FREDEMMOTT_USB_VIRTPP_Request apiRequest);
+    FREDEMMOTT_USBIP_VirtPP_Request apiRequest);
   std::expected<void, HRESULT> OnSubmitRequest(const FredEmmott::USBIP::USBIP_CMD_SUBMIT&);
   std::expected<void, HRESULT> OnUnlinkRequest(const FredEmmott::USBIP::USBIP_CMD_UNLINK&);
 };
 
-struct FREDEMMOTT_USB_VIRTPP_Request {
-  FREDEMMOTT_USB_VIRTPP_DeviceHandle mDevice{};
+struct FREDEMMOTT_USBIP_VirtPP_Request {
+  FREDEMMOTT_USBIP_VirtPP_DeviceHandle mDevice{};
   uint32_t mSequenceNumber{};
   uint32_t mTransferBufferLength{};
 };
