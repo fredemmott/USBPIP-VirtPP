@@ -4,6 +4,7 @@
 
 #ifdef __cplusplus
 #include <cstdint>
+extern "C" {
 #else
 #include <stdint.h>
 #endif
@@ -22,3 +23,7 @@ struct FredEmmott_HIDSpec_HIDDescriptor_ReportDescriptor {
   uint16_t wDescriptorLength;
 };
 #pragma pack(pop)
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
