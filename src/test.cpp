@@ -1,24 +1,18 @@
+#include <FredEmmott/HIDSpec.h>
 #include <FredEmmott/USBIP-VirtPP.h>
-#include <FredEmmott/USBSpec.hpp>
 
 #include <print>
 #include <functional>
 #include <future>
 #include <wil/resource.h>
 
-#pragma comment(lib, "ws2_32.lib")
-
-namespace USB = FredEmmott::USBSpec;
-
-namespace USBStrings {
-enum class Indices : uint8_t {
+enum class USBString : uint8_t {
   LangID = 0,
   Manufacturer,
   Product,
   SerialNumber,
   Interface,
 };
-};// namespace USBStrings
 
 // HID Report Descriptor (Minimal Boot Mouse: Buttons (1 byte) + X (1 byte) + Y
 // (1 byte))
@@ -59,10 +53,10 @@ constexpr FredEmmott_USBSpec_DeviceDescriptor MouseDeviceDescriptor{
   .idProduct = 0x4242,
   .bcdDevice = 0x01'00,
   .iManufacturer
-  = std::to_underlying(USBStrings::Indices::Manufacturer),
-  .iProduct = std::to_underlying(USBStrings::Indices::Product),
+  = std::to_underlying(USBString::Manufacturer),
+  .iProduct = std::to_underlying(USBString::Product),
   .iSerialNumber
-  = std::to_underlying(USBStrings::Indices::SerialNumber),
+  = std::to_underlying(USBString::SerialNumber),
   .bNumConfigurations = 1,
 };
 
@@ -82,16 +76,17 @@ constexpr struct MouseConfigurationDescriptor {
     .bDescriptorType = 0x04,
     .bNumEndpoints = 1,
     .bInterfaceClass = 3,// HID
-    .iInterface = std::to_underlying(USBStrings::Indices::Interface),
+    .iInterface = std::to_underlying(USBString::Interface),
   };
-  USB::HIDDescriptor mHID{
-    .mLength = sizeof(USB::HIDDescriptor) + sizeof(USB::HIDDescriptor::Report),
-    .mHIDSpecVersion = 0x01'11,
-    .mNumDescriptors = 1,
+  FredEmmott_HIDSpec_HIDDescriptor mHID{
+    .bLength = sizeof(mHID) + sizeof(mHIDReport),
+    .bDescriptorType = 0x21,
+    .bcdHID = 0x01'11,
+    .bNumDescriptors = 1,
   };
-  USB::HIDDescriptor::Report mHIDReportDescriptor{
-    .mType = 0x22,// HID Report
-    .mLength = sizeof(ReportDescriptor),
+  FredEmmott_HIDSpec_HIDDescriptor_ReportDescriptor mHIDReport {
+    .bDescriptorType = 0x22,
+    .wDescriptorLength = sizeof(ReportDescriptor),
   };
   FredEmmott_USBSpec_EndpointDescriptor mEndpoint{
     .bLength = FredEmmott_USBSpec_EndPointDescriptor_Size,
@@ -147,28 +142,28 @@ extern "C" FredEmmott_USBIP_VirtPP_Result OnInputRequest(
       }
       if (descriptorType == 0x03) {
         // String Descriptor
-        switch (static_cast<USBStrings::Indices>(descriptorIndex)) {
-          case USBStrings::Indices::LangID:
+        switch (static_cast<USBString>(descriptorIndex)) {
+          case USBString::LangID:
             std::println("   - Responding with LANGID String Descriptor.");
             return FredEmmott_USBIP_VirtPP_Request_SendStringReply(
               handle,
               L"\x0409");
-          case USBStrings::Indices::Manufacturer:
+          case USBString::Manufacturer:
             return FredEmmott_USBIP_VirtPP_Request_SendStringReply(
               handle,
               L"Fred");
-          case USBStrings::Indices::Product:
+          case USBString::Product:
             std::println("   - Responding with PRODUCT String Descriptor.");
             return FredEmmott_USBIP_VirtPP_Request_SendStringReply(
               handle,
               L"FakeMouse");
-          case USBStrings::Indices::SerialNumber:
+          case USBString::SerialNumber:
             std::println(
               "   - Responding with SERIALNUMBER String Descriptor.");
             return FredEmmott_USBIP_VirtPP_Request_SendStringReply(
               handle,
               L"1234");
-          case USBStrings::Indices::Interface:
+          case USBString::Interface:
             std::println("   - Responding with INTERFACE String Descriptor.");
             return FredEmmott_USBIP_VirtPP_Request_SendStringReply(
               handle,

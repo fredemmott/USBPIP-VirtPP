@@ -14,6 +14,8 @@
 
 #include <ws2tcpip.h>
 
+#pragma comment(lib, "ws2_32.lib")
+
 namespace USBIP = FredEmmott::USBIP;
 using namespace FredEmmott::USBVirtPP;
 

@@ -14,10 +14,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_executable(
         usbip_virtpp
         include/FredEmmott/USBIP.hpp
-        include/FredEmmott/USBSpec.hpp
         include/FredEmmott/USBIP-VirtPP.h
         include/FredEmmott/USBSpec.h
         include/FredEmmott/USBSpec/win32.h
+        include/FredEmmott/HIDSpec.h
         src/api/c/detail.hpp
         src/api/c/Device.cpp
         src/api/c/Instance.cpp
