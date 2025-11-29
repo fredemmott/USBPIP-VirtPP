@@ -4,7 +4,7 @@
 #include "detail.hpp"
 #include "send-recv.hpp"
 
-#include <FredEmmott/USBIP-VirtPP.h>
+#include <FredEmmott/USBIP-VirtPP/Core.h>
 #include <FredEmmott/USBIP.hpp>
 
 #include <print>

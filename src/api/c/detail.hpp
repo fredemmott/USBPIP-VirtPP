@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: MIT
 #pragma once
 
-#include <FredEmmott/USBIP-VirtPP.h>
+#include <FredEmmott/USBIP-VirtPP/Core.h>
+#include <FredEmmott/USBIP-VirtPP/Device.h>
 #include <FredEmmott/USBIP.hpp>
 #include <stop_token>
 #include <optional>
@@ -13,7 +14,6 @@
 #include <winsock2.h>
 #include <wil/resource.h>
 
-#include <expected>
 #include <format>
 #include <print>
 #include <string_view>

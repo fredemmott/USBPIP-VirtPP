@@ -1,5 +1,6 @@
 #include <FredEmmott/HIDSpec.h>
-#include <FredEmmott/USBIP-VirtPP.h>
+#include <FredEmmott/USBIP-VirtPP/Core.h>
+#include <FredEmmott/USBIP-VirtPP/Device.h>
 
 #include <print>
 #include <functional>
