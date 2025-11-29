@@ -222,12 +222,11 @@ int main() {
   const auto destroyInstance = wil::scope_exit(
     std::bind_front(&FredEmmott_USBIP_VirtPP_Instance_Destroy, instance));
 
-  const FredEmmott_USBIP_VirtPP_Device_Callbacks callbacks{
-    .OnInputRequest = &OnInputRequest,
-  };
-  const FredEmmott_USBIP_VirtPP_Device_InitData deviceInit{
+  constexpr FredEmmott_USBIP_VirtPP_Device_InitData deviceInit{
+    .mCallbacks = {
+      .OnInputRequest = &OnInputRequest,
+    },
     .mAutoAttach = true,
-    .mCallbacks = &callbacks,
     .mDeviceDescriptor = &MouseDeviceDescriptor,
     .mNumInterfaces = 1,
     .mInterfaceDescriptors = &MouseConfigurationDescriptor.mInterface,

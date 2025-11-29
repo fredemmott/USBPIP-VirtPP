@@ -108,17 +108,13 @@ FredEmmott_USBIP_VirtPP_Device::FredEmmott_USBIP_VirtPP_Device(
     return;
   }
 
-  if (!initData->mCallbacks) {
-    instance->LogError("Can't create device without callbacks");
-    return;
-  }
   if (!initData->mDeviceDescriptor) {
     instance->LogError("Can't create device without device config");
     return;
   }
 
   mAutoAttach = initData->mAutoAttach;
-  mCallbacks = *initData->mCallbacks;
+  mCallbacks = initData->mCallbacks;
   if (!mCallbacks.OnInputRequest) {
     instance->LogError("Can't create device without OnInputRequest callback");
     mInstance = nullptr;

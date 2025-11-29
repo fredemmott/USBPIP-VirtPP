@@ -35,8 +35,9 @@ struct FredEmmott_USBIP_VirtPP_Instance_Callbacks {
 
 
 struct FredEmmott_USBIP_VirtPP_Instance_InitData {
-  FredEmmott_USBIP_VirtPP_Instance_Callbacks mCallbacks;
   void* mUserData;
+  FredEmmott_USBIP_VirtPP_Instance_Callbacks mCallbacks;
+
   uint16_t mPortNumber;// set to zero to auto-assign
 };
 
@@ -75,8 +76,9 @@ struct FredEmmott_USBIP_VirtPP_Device_Callbacks {
 
 struct FredEmmott_USBIP_VirtPP_Device_InitData {
   void* mUserData;
+  FredEmmott_USBIP_VirtPP_Device_Callbacks mCallbacks;
+
   bool mAutoAttach;
-  FredEmmott_USBIP_VirtPP_Device_Callbacks const* mCallbacks;
   FredEmmott_USBSpec_DeviceDescriptor const* mDeviceDescriptor;
   uint8_t mNumInterfaces;
   FredEmmott_USBSpec_InterfaceDescriptor const* mInterfaceDescriptors;
