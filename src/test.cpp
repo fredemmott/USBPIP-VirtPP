@@ -18,12 +18,6 @@ enum class Indices : uint8_t {
   SerialNumber,
   Interface,
 };
-
-constexpr auto LangID = USB::StringDescriptor{L"\x0409"};// en_US
-constexpr auto Manufacturer = USB::StringDescriptor{L"Fred"};
-constexpr auto Product = USB::StringDescriptor{L"FakeMouse"};
-constexpr auto SerialNumber = USB::StringDescriptor{L"6969"};
-constexpr auto Interface = USB::StringDescriptor{L"FakeInterface"};
 };// namespace USBStrings
 
 // HID Report Descriptor (Minimal Boot Mouse: Buttons (1 byte) + X (1 byte) + Y
@@ -83,7 +77,7 @@ constexpr struct MouseConfigurationDescriptor {
     .bmAttributes = 0x80 | 0x20,// bus-powered, remote wakeup
     .MaxPower = 0x32,// 100ma
   };
-  FredEmmott_USBSpec_InterfaceDescriptor mInterface {
+  FredEmmott_USBSpec_InterfaceDescriptor mInterface{
     .bLength = FredEmmott_USBSpec_InterfaceDescriptor_Size,
     .bDescriptorType = 0x04,
     .bNumEndpoints = 1,
@@ -156,31 +150,29 @@ extern "C" FredEmmott_USBIP_VirtPP_Result OnInputRequest(
         switch (static_cast<USBStrings::Indices>(descriptorIndex)) {
           case USBStrings::Indices::LangID:
             std::println("   - Responding with LANGID String Descriptor.");
-            return FredEmmott_USBIP_VirtPP_Request_SendReply(
+            return FredEmmott_USBIP_VirtPP_Request_SendStringReply(
               handle,
-              USBStrings::LangID);
+              L"\x0409");
           case USBStrings::Indices::Manufacturer:
-            std::println(
-              "   - Responding with MANUFACTURER String Descriptor.");
-            return FredEmmott_USBIP_VirtPP_Request_SendReply(
+            return FredEmmott_USBIP_VirtPP_Request_SendStringReply(
               handle,
-              USBStrings::Manufacturer);
+              L"Fred");
           case USBStrings::Indices::Product:
             std::println("   - Responding with PRODUCT String Descriptor.");
-            return FredEmmott_USBIP_VirtPP_Request_SendReply(
+            return FredEmmott_USBIP_VirtPP_Request_SendStringReply(
               handle,
-              USBStrings::Product);
+              L"FakeMouse");
           case USBStrings::Indices::SerialNumber:
             std::println(
               "   - Responding with SERIALNUMBER String Descriptor.");
-            return FredEmmott_USBIP_VirtPP_Request_SendReply(
+            return FredEmmott_USBIP_VirtPP_Request_SendStringReply(
               handle,
-              USBStrings::SerialNumber);
+              L"1234");
           case USBStrings::Indices::Interface:
             std::println("   - Responding with INTERFACE String Descriptor.");
-            return FredEmmott_USBIP_VirtPP_Request_SendReply(
+            return FredEmmott_USBIP_VirtPP_Request_SendStringReply(
               handle,
-              USBStrings::Interface);
+              L"FakeInterface");
         }
         // TODO
         __debugbreak();

@@ -59,3 +59,21 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendReply(
 
   return FredEmmott_USBIP_VirtPP_SUCCESS;
 }
+
+FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendStringReply(
+  const FredEmmott_USBIP_VirtPP_RequestHandle handle,
+  wchar_t const* data,
+  size_t charCount) {
+  const auto byteCount = (charCount * 2) + offsetof(_USB_STRING_DESCRIPTOR, bString);
+  // TODO: check byteCount <= 0xff
+  thread_local union {
+    _USB_STRING_DESCRIPTOR descriptor;
+    std::byte bytes[128];
+  } reply;
+  reply.descriptor = {
+    .bLength = static_cast<uint8_t>(byteCount),
+    .bDescriptorType = 0x03, // STRING
+  };
+  memcpy(reply.descriptor.bString, data, charCount * 2);
+  return FredEmmott_USBIP_VirtPP_Request_SendReply(handle, reply.bytes, byteCount);
+}

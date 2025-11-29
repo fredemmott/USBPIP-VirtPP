@@ -112,7 +112,10 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendReply(
   FredEmmott_USBIP_VirtPP_RequestHandle,
   void const* data,
   size_t dataSize);
-
+FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendStringReply(
+  FredEmmott_USBIP_VirtPP_RequestHandle,
+  wchar_t const* data,
+  size_t charCount);
 
 /***** END *****/
 
@@ -120,11 +123,18 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendReply(
 }// extern "C"
 template <class T>
 FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendReply(
-  FredEmmott_USBIP_VirtPP_RequestHandle handle,
+  const FredEmmott_USBIP_VirtPP_RequestHandle handle,
   const T& data) {
   return FredEmmott_USBIP_VirtPP_Request_SendReply(
     handle,
     &data,
     sizeof(T));
+}
+
+template<size_t N>
+FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendStringReply(
+  const FredEmmott_USBIP_VirtPP_RequestHandle handle,
+  wchar_t const (&data)[N]) {
+  return FredEmmott_USBIP_VirtPP_Request_SendStringReply(handle, data, N - 1);
 }
 #endif
