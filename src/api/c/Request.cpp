@@ -60,6 +60,21 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendReply(
   return FredEmmott_USBIP_VirtPP_SUCCESS;
 }
 
+FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendErrorReply(
+  const FredEmmott_USBIP_VirtPP_Request* const request,
+  const int32_t status) {
+  const auto socket = request->mDevice->mInstance->mClientSocket;
+  USBIP::USBIP_RET_SUBMIT response{
+    .mStatus = status
+  };
+  response.mHeader.mSequenceNumber = request->mSequenceNumber;
+  if (const auto ret = SendAll(socket, response); !ret)
+  [[unlikely]] {
+    return std::bit_cast<FredEmmott_USBIP_VirtPP_Result>(ret.error());
+  }
+  return FredEmmott_USBIP_VirtPP_SUCCESS;
+}
+
 FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendStringReply(
   const FredEmmott_USBIP_VirtPP_RequestHandle handle,
   wchar_t const* data,

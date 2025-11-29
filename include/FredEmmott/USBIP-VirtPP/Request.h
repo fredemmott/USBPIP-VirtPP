@@ -39,6 +39,10 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendStringReply(
   FredEmmott_USBIP_VirtPP_RequestHandle,
   wchar_t const* data,
   size_t charCount);
+// Use -32 (linux -EPIPE) for 'STALL', e.g. for bad USB string descriptor requests
+FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendErrorReply(
+  FredEmmott_USBIP_VirtPP_RequestHandle,
+  int32_t status);
 
 /***** END *****/
 

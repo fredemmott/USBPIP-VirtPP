@@ -246,7 +246,9 @@ HRESULT FredEmmott_USBIP_VirtPP_HIDDevice::OnUSBInputRequest(
                 request,
                 mInit.mUSBDeviceData.mInterface);
           }
-          return -1;
+          // Indicate a stall by sending EPIPE
+          std::println("Sending stall to indicate bad string request");
+          return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(request, -EPIPE);
         }
       }
     }
