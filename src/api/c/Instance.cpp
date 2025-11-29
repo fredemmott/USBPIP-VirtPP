@@ -85,7 +85,12 @@ FredEmmott_USBIP_VirtPP_Instance::FredEmmott_USBIP_VirtPP_Instance(
     .sin_family = AF_INET,
     .sin_port = htons(initData->mPortNumber),
   };
-  server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
+  if (initData->mAllowRemoteConnections) {
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  } else {
+    server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  }
 
   if (
     bind(

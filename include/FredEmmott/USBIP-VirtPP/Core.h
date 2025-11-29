@@ -37,6 +37,7 @@ struct FredEmmott_USBIP_VirtPP_Instance_InitData {
   FredEmmott_USBIP_VirtPP_Instance_Callbacks mCallbacks;
 
   uint16_t mPortNumber;// set to zero to auto-assign
+  bool mAllowRemoteConnections;
 };
 
 /****** Instance:: methods *****/

@@ -6,7 +6,11 @@
 #include <wil/resource.h>
 #include <cwchar>
 
+
 // HID Report Descriptor (Minimal Boot Mouse: Buttons (1 byte) + X (1 byte) + Y (1 byte))
+constexpr bool AutoAttachEnabled = false;
+
+// HID Report Descriptor (minimal mouse: Buttons (1 byte) + X (1 byte) + Y (1 byte))
 const uint8_t ReportDescriptor[] = {
   0x05, 0x01,// Usage Page (Generic Desktop Ctrls)
   0x09, 0x02,// Usage (Mouse)
@@ -68,9 +72,10 @@ int main() {
     ReportDescriptor,
     sizeof(ReportDescriptor),
   };
+    .mAutoAttach = AutoAttachEnabled,
   constexpr FredEmmott_USBIP_VirtPP_HIDDevice_InitData hidInit{
     .mCallbacks = {&OnGetInputReport},
-    .mAutoAttach = true,
+    .mAutoAttach = AutoAttachEnabled,
     .mUSBDeviceData = usbDevice,
     .mReportCount = 1,
     .mReportDescriptors = { reportDescriptor },
