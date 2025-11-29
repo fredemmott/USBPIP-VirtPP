@@ -178,14 +178,6 @@ extern "C" FredEmmott_USBIP_VirtPP_Result OnInputRequest(
         __debugbreak();
         return -1;
       }
-
-      if (descriptorType == 0x22) {
-        // HID Report Descriptor
-        std::println("   - Responding with HID REPORT Descriptor bytes).");
-        return FredEmmott_USBIP_VirtPP_Request_SendReply(
-          handle,
-          ReportDescriptor);
-      }
     }
     if (requestType == DeviceToInterface && request == GetDescriptor) {
       const auto descriptorType = (uint8_t)(value >> 8);
