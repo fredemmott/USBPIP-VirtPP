@@ -99,7 +99,7 @@ struct FredEmmott_USBIP_VirtPP_Instance final {
 private:
   bool mNeedWSACleanup{false};
 
-  void HandleClient(SOCKET);
+ [[nodiscard]] HRESULT OnClientSocketActive(SOCKET);
   std::expected<void, HRESULT> OnDevListOp();
   std::expected<void, HRESULT> OnImportOp(
     const FredEmmott::USBIP::OP_REQ_IMPORT&);

@@ -17,11 +17,6 @@ struct FredEmmott_USBIP_VirtPP_HIDDevice;
 typedef FredEmmott_USBIP_VirtPP_HIDDevice*
 FredEmmott_USBIP_VirtPP_HIDDeviceHandle;
 
-struct FredEmmott_USBIP_VirtPP_HIDReportDescriptorReference {
-  const void* mData;
-  uint16_t mSize;
-};
-
 struct FredEmmott_USBIP_VirtPP_HIDDevice_USBDeviceData {
   uint16_t mVendorID;
   uint16_t mProductID;
@@ -59,7 +54,7 @@ struct FredEmmott_USBIP_VirtPP_HIDDevice_InitData {
   bool mAutoAttach;
   FredEmmott_USBIP_VirtPP_HIDDevice_USBDeviceData mUSBDeviceData;
   uint8_t mReportCount;
-  FredEmmott_USBIP_VirtPP_HIDReportDescriptorReference mReportDescriptors[1];
+  FredEmmott_USBIP_VirtPP_BlobReference mReportDescriptors[1];
 };
 
 FredEmmott_USBIP_VirtPP_HIDDeviceHandle

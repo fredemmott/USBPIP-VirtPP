@@ -20,3 +20,6 @@ typedef USB_ENDPOINT_DESCRIPTOR FredEmmott_USBSpec_EndpointDescriptor;
  * `USB_DT_ENDPOINT_SIZE`, not `USB_DT_ENDPOINT_AUDIO_SIZE`
  */
 #define FredEmmott_USBSpec_EndPointDescriptor_Size sizeof(USB_ENDPOINT_DESCRIPTOR)
+
+typedef USB_DEVICE_QUALIFIER_DESCRIPTOR FredEmmott_USBSpec_DeviceQualifierDescriptor;
+#define FredEmmott_USBSpec_DeviceQualifierDescriptor_Size sizeof(USB_DEVICE_QUALIFIER_DESCRIPTOR)

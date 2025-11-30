@@ -13,7 +13,8 @@
 namespace USBIP = FredEmmott::USBIP;
 using namespace FredEmmott::USBVirtPP;
 
-FredEmmott_USBIP_VirtPP_InstanceHandle FredEmmott_USBIP_VirtPP_Request_GetInstance(
+FredEmmott_USBIP_VirtPP_InstanceHandle
+FredEmmott_USBIP_VirtPP_Request_GetInstance(
   const FredEmmott_USBIP_VirtPP_RequestHandle handle) {
   return handle->mDevice->mInstance;
 }
@@ -79,7 +80,9 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendStringReply(
   const FredEmmott_USBIP_VirtPP_RequestHandle handle,
   wchar_t const* data,
   size_t charCount) {
-  const auto byteCount = (charCount * 2) + offsetof(_USB_STRING_DESCRIPTOR, bString);
+  const auto byteCount = (charCount * 2) + offsetof(
+    _USB_STRING_DESCRIPTOR,
+    bString);
   // TODO: check byteCount <= 0xff
   thread_local union {
     _USB_STRING_DESCRIPTOR descriptor;
@@ -87,8 +90,11 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendStringReply(
   } reply;
   reply.descriptor = {
     .bLength = static_cast<uint8_t>(byteCount),
-    .bDescriptorType = 0x03, // STRING
+    .bDescriptorType = 0x03,// STRING
   };
   memcpy(reply.descriptor.bString, data, charCount * 2);
-  return FredEmmott_USBIP_VirtPP_Request_SendReply(handle, reply.bytes, byteCount);
+  return FredEmmott_USBIP_VirtPP_Request_SendReply(
+    handle,
+    reply.bytes,
+    byteCount);
 }

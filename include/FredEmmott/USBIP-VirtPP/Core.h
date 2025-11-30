@@ -21,6 +21,16 @@ typedef int32_t FredEmmott_USBIP_VirtPP_Result;
 #define FredEmmott_USBIP_VirtPP_SUCCEEDED(x) \
   ((x) == FredEmmott_USBIP_VirtPP_SUCCESS)
 
+struct FredEmmott_USBIP_VirtPP_BlobReference {
+  const void* mData;
+  uint16_t mByteCount;
+};
+
+struct FredEmmott_USBIP_VirtPP_StringReference {
+  const wchar_t* mData;
+  uint16_t mCharCount;
+};
+
 /****** Instance:: types *****/
 
 struct FredEmmott_USBIP_VirtPP_Instance;

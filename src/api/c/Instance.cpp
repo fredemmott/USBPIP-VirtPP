@@ -24,8 +24,8 @@ auto MakeUSBIPDevice(
   uint32_t busId,
   uint32_t deviceId,
   const FredEmmott_USBSpec_DeviceDescriptor& deviceDescriptor,
-  uint8_t numInterfaces) {
-  USBIP::Device ret{
+  const uint8_t numInterfaces) {
+  USBIP::Device ret {
     .mBusNum = busId,
     .mDevNum = deviceId,
     .mSpeed = USBIP::Speed::Full,
@@ -35,21 +35,17 @@ auto MakeUSBIPDevice(
     .mDeviceClass = deviceDescriptor.bDeviceClass,
     .mDeviceSubClass = deviceDescriptor.bDeviceSubClass,
     .mDeviceProtocol = deviceDescriptor.bDeviceProtocol,
-    .mConfigurationValue = 1,
     .mNumConfigurations = deviceDescriptor.bNumConfigurations,
-    .mNumInterfaces = numInterfaces
-  };
+    .mNumInterfaces = numInterfaces};
   std::format_to(
-    ret.mPath,
-    "/github.com/fredemmott/USBIP-VirtPP/{}/{}",
-    busId,
-    deviceId);
+    ret.mPath, "/github.com/fredemmott/USBIP-VirtPP/{}/{}", busId, deviceId);
   std::format_to(ret.mBusID, "{}-{}", busId, deviceId);
   return ret;
 }
-}
+}// namespace
 
-extern "C" FredEmmott_USBIP_VirtPP_InstanceHandle FredEmmott_USBIP_VirtPP_Instance_Create(
+extern "C" FredEmmott_USBIP_VirtPP_InstanceHandle
+FredEmmott_USBIP_VirtPP_Instance_Create(
   const FredEmmott_USBIP_VirtPP_Instance_InitData* initData) {
   auto ret = std::make_unique<FredEmmott_USBIP_VirtPP_Instance>(initData);
   if (!ret->mListeningSocket) {
@@ -66,22 +62,22 @@ FredEmmott_USBIP_VirtPP_Instance::~FredEmmott_USBIP_VirtPP_Instance() {
 FredEmmott_USBIP_VirtPP_Instance::FredEmmott_USBIP_VirtPP_Instance(
   const FredEmmott_USBIP_VirtPP_Instance_InitData* initData)
   : mInitData(*initData) {
-  WSADATA wsaData{};
+  WSADATA wsaData {};
   if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
     LogError("WSAStartup failed: {}", WSAGetLastError());
     return;
   }
   mNeedWSACleanup = true;
 
-  wil::unique_socket listeningSocket{socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)};
+  wil::unique_socket listeningSocket {
+    socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)};
   if (!listeningSocket) {
     LogError(
-      "Creating listening socket failed with error: {}",
-      WSAGetLastError());
+      "Creating listening socket failed with error: {}", WSAGetLastError());
     return;
   }
 
-  sockaddr_in server_addr{
+  sockaddr_in server_addr {
     .sin_family = AF_INET,
     .sin_port = htons(initData->mPortNumber),
   };
@@ -119,12 +115,14 @@ uint16_t FredEmmott_USBIP_VirtPP_Instance::GetPortNumber() const {
     LogError("GetPortNumber() called without a listening socket");
     return 0;
   }
-  sockaddr_in server_addr{.sin_family = AF_INET};
+  sockaddr_in server_addr {.sin_family = AF_INET};
   socklen_t addr_len = sizeof(server_addr);
-  if (getsockname(
-    mListeningSocket.get(),
-    reinterpret_cast<sockaddr*>(&server_addr),
-    &addr_len) != 0) {
+  if (
+    getsockname(
+      mListeningSocket.get(),
+      reinterpret_cast<sockaddr*>(&server_addr),
+      &addr_len)
+    != 0) {
     LogError("getsockname failed with error: {}", WSAGetLastError());
     return 0;
   }
@@ -137,114 +135,195 @@ void FredEmmott_USBIP_VirtPP_Instance_Run(
 }
 
 void FredEmmott_USBIP_VirtPP_Instance::Run() {
-  const auto future = std::async(std::launch::async, &FredEmmott_USBIP_VirtPP_Instance::AutoAttach, this);
+  const auto future = std::async(
+    std::launch::async, &FredEmmott_USBIP_VirtPP_Instance::AutoAttach, this);
+  const wil::unique_event stopEvent {
+    CreateEventW(nullptr, TRUE, FALSE, nullptr)};
+  const std::stop_callback stopCallback(
+    mStopSource.get_token(), std::bind_front(&SetEvent, stopEvent.get()));
+
+  const wil::unique_event listenEvent {WSACreateEvent()};
+  WSAEventSelect(mListeningSocket.get(), listenEvent.get(), FD_ACCEPT);
+
+  std::vector events {stopEvent.get(), listenEvent.get()};
+
+  std::vector<wil::unique_socket> clientSockets;
+  std::vector<wil::unique_event> clientEvents;
+  Log("Listening for USB/IP connections on port {}", this->GetPortNumber());
   while (!mStopSource.stop_requested()) {
-    Log("Listening for USB/IP connections on port {}", this->GetPortNumber());
-    const wil::unique_socket clientSocket{
-      accept(mListeningSocket.get(), nullptr, nullptr)};
-    if (!clientSocket) {
-      LogError("accept failed with error: {}", WSAGetLastError());
-      continue;
+    const auto wait
+      = WaitForMultipleObjects(events.size(), events.data(), FALSE, INFINITE);
+    const auto waitIdx = wait - WAIT_OBJECT_0;
+    if (waitIdx < 0 || waitIdx >= events.size()) {
+      __debugbreak();
+      break;
     }
-    this->HandleClient(clientSocket.get());
+
+    ResetEvent(events.at(waitIdx));
+
+    switch (waitIdx) {
+      // stopEvent
+      case 0:
+        Log("Server stop requested, stopping");
+        return;
+      // listenEvent
+      case 1: {
+        // New connection
+        wil::unique_socket clientSocket {
+          accept(mListeningSocket.get(), nullptr, nullptr)};
+        if (!clientSocket) {
+          LogError("accept failed with error: {}", WSAGetLastError());
+          __debugbreak();
+          continue;
+        }
+        Log("USB/IP connection established");
+
+        wil::unique_event clientEvent {WSACreateEvent()};
+        WSAEventSelect(
+          clientSocket.get(), clientEvent.get(), FD_READ | FD_CLOSE);
+        events.push_back(clientEvent.get());
+        clientSockets.push_back(std::move(clientSocket));
+        clientEvents.push_back(std::move(clientEvent));
+        continue;
+      }
+      default: {
+        const auto socketIdx = waitIdx - 2;
+        const auto clientSocket = clientSockets.at(socketIdx).get();
+        WSANETWORKEVENTS socketEvents {};
+        if (const auto ret = WSAEnumNetworkEvents(
+              clientSocket, events.at(waitIdx), &socketEvents);
+            ret != 0) {
+          __debugbreak();
+        }
+        switch (socketEvents.lNetworkEvents) {
+          case 0:
+            // kernel race condition; even though we've just been told there's a
+            // read or a close on this socket, nope, there's not
+            continue;
+          case FD_CLOSE:
+            events.erase(events.begin() + waitIdx);
+            clientSockets.erase(clientSockets.begin() + socketIdx);
+            clientEvents.erase(clientEvents.begin() + socketIdx);
+            Log("Client disconnected");
+            continue;
+          case FD_READ:
+            break;
+          default:
+            __debugbreak();
+        }
+
+        if (const auto hr = this->OnClientSocketActive(clientSocket);
+            !SUCCEEDED(hr)) {
+          if (hr == HRESULT_FROM_WIN32(WSAECONNRESET)) {
+            Log("Client disconnected");
+            continue;
+          }
+          LogError("Failed to handle client socket: {}", hr);
+          __debugbreak();
+        }
+        continue;
+      }
+    }
   }
 }
 
-void FredEmmott_USBIP_VirtPP_Instance::HandleClient(const SOCKET clientSocket) {
+HRESULT FredEmmott_USBIP_VirtPP_Instance::OnClientSocketActive(
+  const SOCKET clientSocket) {
   if (mClientSocket != INVALID_SOCKET) {
-    LogError("Multiple clients connected");
-    return;
+    LogError("Multiple clients active at the same time");
+    return HRESULT_FROM_WIN32(ERROR_INVALID_STATE);
   }
   if (clientSocket == INVALID_SOCKET || !clientSocket) {
     LogError("Invalid client socket");
-    return;
+    return HRESULT_FROM_WIN32(ERROR_BAD_ARGUMENTS);
   }
 
   mClientSocket = clientSocket;
-  const auto forgetSocketAtExit = wil::scope_exit(
-    [this] {
-      mClientSocket = INVALID_SOCKET;
-    });
+  const auto forgetSocketAtExit
+    = wil::scope_exit([this] { mClientSocket = INVALID_SOCKET; });
 
-  Log("USB/IP connection established");
+  union {
+    USBIP::CommandCode mCommandCode {};
+    USBIP::OP_REQ_DEVLIST mOP_REQ_DEVLIST;
+    USBIP::OP_REQ_IMPORT mOP_REQ_IMPORT;
+    USBIP::USBIP_CMD_SUBMIT mUSBIP_CMD_SUBMIT;
+    USBIP::USBIP_CMD_UNLINK mUSBIP_CMD_UNLINK;
+  } request;
 
-  while (!mStopSource.stop_requested()) {
-    union {
-      USBIP::CommandCode mCommandCode{};
-      USBIP::OP_REQ_DEVLIST mOP_REQ_DEVLIST;
-      USBIP::OP_REQ_IMPORT mOP_REQ_IMPORT;
-      USBIP::USBIP_CMD_SUBMIT mUSBIP_CMD_SUBMIT;
-      USBIP::USBIP_CMD_UNLINK mUSBIP_CMD_UNLINK;
-    } request;
+  if (const auto ret = RecvAll(clientSocket, &request.mCommandCode); !ret) {
+    std::println(stderr, "Client disconnected or recv failed.");
+    return ret.error();
+  }
 
-    if (!RecvAll(clientSocket, &request.mCommandCode)) {
-      std::println(stderr, "Client disconnected or recv failed.");
-      break;// Exit loop on failure/disconnect
+  const auto RecvRemainder = [this]<class T>(const SOCKET sock, T* what) {
+    const auto ret = RecvAll(
+      sock,
+      reinterpret_cast<char*>(what) + sizeof(USBIP::CommandCode),
+      sizeof(T) - sizeof(USBIP::CommandCode));
+    if (!ret) [[unlikely]] {
+      LogError("-> Failed to read required data: {}", ret.error());
     }
+    return ret;
+  };
 
-    const auto RecvRemainder = [this]<class T>(const SOCKET sock, T* what) {
-      const auto ret = RecvAll(
-        sock,
-        reinterpret_cast<char*>(what) + sizeof(USBIP::CommandCode),
-        sizeof(T) - sizeof(USBIP::CommandCode));
-      if (!ret) [[unlikely]] {
-        LogError("-> Failed to read required data: {}", ret.error());
-      }
-      return ret;
-    };
-
-    switch (request.mCommandCode) {
-      case USBIP::CommandCode::OP_REQ_DEVLIST:
-        Log("-> Received REQ_DEVLIST");
-        if (!RecvRemainder(clientSocket, &request.mOP_REQ_DEVLIST))
-          return;
-        if (!this->OnDevListOp())
-          return;
-        continue;
-      case USBIP::CommandCode::OP_REQ_IMPORT:
-        Log("-> Received REQ_IMPORT");
-        if (!RecvRemainder(clientSocket, &request.mOP_REQ_IMPORT))
-          return;
-        if (!this->OnImportOp(request.mOP_REQ_IMPORT))
-          return;
-        continue;
-      case USBIP::CommandCode::USBIP_CMD_SUBMIT:
-        // Not logging here, way too spammy :)
-        if (!RecvRemainder(clientSocket, &request.mUSBIP_CMD_SUBMIT))
-          return;
-        if (!this->OnSubmitRequest(request.mUSBIP_CMD_SUBMIT))
-          return;
-        continue;
-      case USBIP::CommandCode::USBIP_CMD_UNLINK: {
-        Log("-> Received CMD_UNLINK");
-        if (!RecvRemainder(clientSocket, &request.mUSBIP_CMD_UNLINK))
-          return;
-        USBIP::USBIP_RET_UNLINK response{};
-        response.mHeader.mSequenceNumber
-          = request.mUSBIP_CMD_UNLINK.mHeader.mSequenceNumber;
-        if (!SendAll(clientSocket, response))
-          return;
-        continue;
-      }
-      case USBIP::CommandCode::USBIP_RET_SUBMIT:
-      case USBIP::CommandCode::USBIP_RET_UNLINK:
-        LogError("-> Received a RET instead of a CMD");
-        return;
-      default:
-        LogError(
-          "-> Unhandled USB/IP command code: 0x{:x}",
-          std::to_underlying(request.mCommandCode));
-        return;
+  switch (request.mCommandCode) {
+    case USBIP::CommandCode::OP_REQ_DEVLIST:
+      Log("-> Received REQ_DEVLIST");
+      if (const auto ret
+          = RecvRemainder(clientSocket, &request.mOP_REQ_DEVLIST);
+          !ret) [[unlikely]]
+        return ret.error();
+      if (const auto ret = this->OnDevListOp(); !ret) [[unlikely]]
+        return ret.error();
+      return S_OK;
+    case USBIP::CommandCode::OP_REQ_IMPORT:
+      Log("-> Received REQ_IMPORT");
+      if (const auto ret = RecvRemainder(clientSocket, &request.mOP_REQ_IMPORT);
+          !ret) [[unlikely]]
+        return ret.error();
+      if (const auto ret = this->OnImportOp(request.mOP_REQ_IMPORT); !ret)
+        [[unlikely]]
+        return ret.error();
+      return S_OK;
+    case USBIP::CommandCode::USBIP_CMD_SUBMIT:
+      // Not logging here, way too spammy :)
+      if (const auto ret
+          = RecvRemainder(clientSocket, &request.mUSBIP_CMD_SUBMIT);
+          !ret) [[unlikely]]
+        return ret.error();
+      if (const auto ret = this->OnSubmitRequest(request.mUSBIP_CMD_SUBMIT);
+          !ret) [[unlikely]]
+        return ret.error();
+      return S_OK;
+    case USBIP::CommandCode::USBIP_CMD_UNLINK: {
+      Log("-> Received CMD_UNLINK");
+      if (const auto ret
+          = RecvRemainder(clientSocket, &request.mUSBIP_CMD_UNLINK);
+          !ret) [[unlikely]]
+        return ret.error();
+      USBIP::USBIP_RET_UNLINK response {};
+      response.mHeader.mSequenceNumber
+        = request.mUSBIP_CMD_UNLINK.mHeader.mSequenceNumber;
+      if (const auto ret = SendAll(clientSocket, response); !ret) [[unlikely]]
+        return ret.error();
+      return S_OK;
     }
+    case USBIP::CommandCode::USBIP_RET_SUBMIT:
+    case USBIP::CommandCode::USBIP_RET_UNLINK:
+      LogError("-> Received a RET instead of a CMD");
+      return HRESULT_FROM_WIN32(ERROR_BAD_COMMAND);
+    default:
+      LogError(
+        "-> Unhandled USB/IP command code: 0x{:x}",
+        std::to_underlying(request.mCommandCode));
+      return HRESULT_FROM_WIN32(ERROR_BAD_COMMAND);
   }
 }
 
 std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnDevListOp() {
-  const USBIP::OP_REP_DEVLIST header{
+  const USBIP::OP_REP_DEVLIST header {
     .mNumDevices = static_cast<uint32_t>(std::ranges::fold_left(
-      mBusses,
-      0,
-      [](auto acc, const auto& bus) { return acc + bus.size(); })),
+      mBusses, 0, [](auto acc, const auto& bus) { return acc + bus.size(); })),
   };
   if (const auto ret = SendAll(mClientSocket, header); !ret)
     return ret;
@@ -252,14 +331,11 @@ std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnDevListOp() {
     for (auto&& [deviceIdx, device]: std::views::enumerate(bus)) {
       const auto& config = device.mDescriptor;
       const auto usbipDevice = MakeUSBIPDevice(
-        busIdx + 1,
-        deviceIdx + 1,
-        config,
-        device.mInterfaces.size());
+        busIdx + 1, deviceIdx + 1, config, device.mInterfaces.size());
       if (const auto ret = SendAll(mClientSocket, usbipDevice); !ret)
         return ret;
       for (auto&& iface: device.mInterfaces) {
-        const USBIP::Interface wireInterface{
+        const USBIP::Interface wireInterface {
           .mClass = iface.bInterfaceClass,
           .mSubClass = iface.bInterfaceSubClass,
           .mProtocol = iface.bInterfaceProtocol,
@@ -275,7 +351,7 @@ std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnDevListOp() {
 
 std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnImportOp(
   const FredEmmott::USBIP::OP_REQ_IMPORT& request) {
-  const std::string_view busId{request.mBusID};
+  const std::string_view busId {request.mBusID};
 
   for (auto&& [busIdx, bus]: std::views::enumerate(mBusses)) {
     for (auto&& [deviceIdx, device]: std::views::enumerate(bus)) {
@@ -289,21 +365,23 @@ std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnImportOp(
         device.mInterfaces.size());
 
       if (const auto ret = SendAll(
-        mClientSocket,
-        USBIP::OP_REP_IMPORT{.mDevice = usbipDevice}); !ret)
+            mClientSocket, USBIP::OP_REP_IMPORT {.mDevice = usbipDevice});
+          !ret)
         return ret;
       return {};
     }
   }
 
   LogError("Failed to find device with busID '{}'", busId);
-  USBIP::OP_REP_IMPORT reply{};
+  USBIP::OP_REP_IMPORT reply {};
   reply.mHeader.mStatus = 1;// per spec, 1 for error
   return SendAll(mClientSocket, reply);
 }
 
-std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnInputRequest(FredEmmott_USBIP_VirtPP_Device& device, const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request, const FredEmmott_USBIP_VirtPP_Request apiRequest)
-{
+std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnInputRequest(
+  FredEmmott_USBIP_VirtPP_Device& device,
+  const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request,
+  const FredEmmott_USBIP_VirtPP_Request apiRequest) {
   const auto ret = device.mCallbacks.OnInputRequest(
     &apiRequest,
     request.mHeader.mEndpoint.NativeValue(),
@@ -315,24 +393,24 @@ std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnInputRequest(Fr
   if (FredEmmott_USBIP_VirtPP_SUCCEEDED(ret)) [[likely]] {
     return {};
   }
-  return std::unexpected{std::bit_cast<HRESULT>(ret)};
+  return std::unexpected {std::bit_cast<HRESULT>(ret)};
 }
 
 std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnSubmitRequest(
   const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request) {
   const auto busIndex = (request.mHeader.mDeviceID.NativeValue() >> 16) - 1;
-  const auto deviceIndex = (request.mHeader.mDeviceID.NativeValue() & 0xffff) -
-    1;
-  if (busIndex >= mBusses.size() || deviceIndex >= mBusses[busIndex].size()) [[
-    unlikely]] {
+  const auto deviceIndex
+    = (request.mHeader.mDeviceID.NativeValue() & 0xffff) - 1;
+  if (busIndex >= mBusses.size() || deviceIndex >= mBusses[busIndex].size())
+    [[unlikely]] {
     LogError(
       "Received submit request for invalid device: bus {}, device {}",
       busIndex,
       deviceIndex);
-    return std::unexpected{HRESULT_FROM_WIN32(ERROR_INVALID_INDEX)};
+    return std::unexpected {HRESULT_FROM_WIN32(ERROR_INVALID_INDEX)};
   }
   auto& device = mBusses.at(busIndex).at(deviceIndex);
-  const FredEmmott_USBIP_VirtPP_Request apiRequest{
+  const FredEmmott_USBIP_VirtPP_Request apiRequest {
     .mDevice = &device,
     .mSequenceNumber = request.mHeader.mSequenceNumber,
     .mTransferBufferLength = request.mTransferBufferLength.NativeValue(),
@@ -345,22 +423,39 @@ std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnSubmitRequest(
   if (request.mSetup.mRequestType == 0) {
     constexpr auto SetConfiguration = 0x09;
     switch (request.mSetup.mRequest) {
-      case SetConfiguration: // no-op, we only support 1 configuration
-        if (const auto ret = FredEmmott_USBIP_VirtPP_Request_SendReply(&apiRequest, nullptr, 0); !FredEmmott_USBIP_VirtPP_SUCCEEDED(ret)) [[unlikely]] {
-          return std::unexpected { static_cast<HRESULT>(ret) };
+      case SetConfiguration:// no-op, we only support 1 configuration
+        if (const auto ret = FredEmmott_USBIP_VirtPP_Request_SendReply(
+              &apiRequest, nullptr, 0);
+            !FredEmmott_USBIP_VirtPP_SUCCEEDED(ret)) [[unlikely]] {
+          return std::unexpected {static_cast<HRESULT>(ret)};
         }
         return {};
       default:
         __debugbreak();
     }
-
   }
 
-  if ((request.mSetup.mRequestType & 0x20) == 0x20 && request.mSetup.mRequest == 0x0a) {
+  if (
+    (request.mSetup.mRequestType & 0x20) == 0x20
+    && request.mSetup.mRequest == 0x0a) {
     // SET_IDLE
     // We don't suport repeating.
-    if (const auto ret = FredEmmott_USBIP_VirtPP_Request_SendReply(&apiRequest, nullptr, 0); !FredEmmott_USBIP_VirtPP_SUCCEEDED(ret)) [[unlikely]] {
-      return std::unexpected { static_cast<HRESULT>(ret) };
+    if (const auto ret
+        = FredEmmott_USBIP_VirtPP_Request_SendReply(&apiRequest, nullptr, 0);
+        !FredEmmott_USBIP_VirtPP_SUCCEEDED(ret)) [[unlikely]] {
+      return std::unexpected {static_cast<HRESULT>(ret)};
+    }
+    return {};
+  }
+
+  constexpr auto HostToInterface = 0x21;
+  constexpr auto SetReport = 0x09;
+  if (request.mSetup.mRequestType == HostToInterface && request.mSetup.mRequest == SetReport) {
+    thread_local char buf[1024];
+    recv(mClientSocket, buf, request.mTransferBufferLength.NativeValue(), 0);
+    // TODO: move to device
+    if (const auto ret = FredEmmott_USBIP_VirtPP_Request_SendErrorReply(&apiRequest, 0); ! FredEmmott_USBIP_VirtPP_SUCCEEDED(ret)) [[unlikely]] {;
+      return std::unexpected {static_cast<HRESULT>(ret)};
     }
     return {};
   }
@@ -369,13 +464,12 @@ std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnSubmitRequest(
 #ifndef _NDEBUG
   __debugbreak();
 #endif
-  return std::unexpected{HRESULT_FROM_WIN32(ERROR_BAD_ARGUMENTS)};
+  return std::unexpected {HRESULT_FROM_WIN32(ERROR_BAD_ARGUMENTS)};
 }
-
 
 std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnUnlinkRequest(
   const USBIP::USBIP_CMD_UNLINK& request) {
-  USBIP::USBIP_RET_UNLINK response{};
+  USBIP::USBIP_RET_UNLINK response {};
   response.mHeader.mSequenceNumber = request.mHeader.mSequenceNumber;
   return SendAll(mClientSocket, response);
 }

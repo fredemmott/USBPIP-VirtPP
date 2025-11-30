@@ -12,8 +12,7 @@ struct FredEmmott_USBIP_VirtPP_HIDDevice final {
   FredEmmott_USBIP_VirtPP_HIDDevice() = delete;
   FredEmmott_USBIP_VirtPP_HIDDevice(
     FredEmmott_USBIP_VirtPP_InstanceHandle,
-    const FredEmmott_USBIP_VirtPP_HIDDevice_InitData&
-    );
+    const FredEmmott_USBIP_VirtPP_HIDDevice_InitData&);
   ~FredEmmott_USBIP_VirtPP_HIDDevice();
 
   // Shallow copy
@@ -35,7 +34,7 @@ private:
   HRESULT OnUSBInputRequest(
     FredEmmott_USBIP_VirtPP_RequestHandle request,
     uint32_t endpoint,
-    uint8_t requestType,
+    uint8_t rawRequestType,
     uint8_t requestCode,
     uint16_t value,
     uint16_t index,

@@ -111,11 +111,10 @@ struct OP_REQ_DEVLIST {
 
 enum class Speed : uint32_t {
   Unknown = 0,
-  Low = 1_be32,
-  Full = 2_be32,
-  Wireless = 3_be32,
-  Super = 4_be32,
-  SuperPlus = 5_be32,
+  Low = 1_be32, // USB 1.1
+  Full = 2_be32, // USB 1.1
+  High = 3_be32, // USB 2.0
+  Variable = 4_be32, // USB 3.0
 };
 
 struct Device {
