@@ -38,8 +38,12 @@ FredEmmott_USBIP_VirtPP_XPad::GetDeviceDescriptor() {
     .bDeviceSubClass = 0xFF,
     .bDeviceProtocol = 0xFF,
     .bMaxPacketSize0 = 0x08,
-    .idVendor = 0x1209,// pid.codes open source
-    .idProduct = 0x0003,
+    //.idVendor = 0x1209,// pid.codes open source
+    //.idProduct = 0x0003,
+    // Some games (e.g. Assassin's Creed 1 & 2) only work correctly if we spoof
+    // MS IDs :(
+    .idVendor = 0x045E,
+    .idProduct = 0x028E,
     .bcdDevice = 0x01'00,
     .iManufacturer = std::to_underlying(StringIndex::Manufacturer),
     .iProduct = std::to_underlying(StringIndex::Product),
