@@ -181,6 +181,11 @@ FredEmmott_USBIP_VirtPP_XPad::FredEmmott_USBIP_VirtPP_XPad(
   if (!mUSBDevice) {
     return;
   }
+
+  const auto lol = reinterpret_cast<uintptr_t>(this);
+  // High nibble of LSB is reserved
+  mSerialNumber = ((lol >> 32) ^ lol) & 0xffff'ff0f;
+  mInstance->Log("XPad serial number: {:#010x}", mSerialNumber);
 }
 
 FredEmmott_USBIP_VirtPP_XPad::~FredEmmott_USBIP_VirtPP_XPad() {
@@ -226,9 +231,12 @@ FredEmmott_USBIP_VirtPP_XPad::OnControlInputRequest(
                 // Required for interoperability with some older games
                 return FredEmmott_USBIP_VirtPP_Request_SendStringReply(
                   request, L"XBOX 360 For Windows");
-              case StringIndex::SerialNumber:
+              case StringIndex::SerialNumber: {
+                wchar_t buffer[8];
+                std::format_to(buffer, "{:x}", mSerialNumber);
                 return FredEmmott_USBIP_VirtPP_Request_SendStringReply(
-                  request, L"1234");
+                  request, buffer);
+              }
               case StringIndex::MSOS: {
 #pragma pack(push, 1)
                 constexpr struct MSOSReply_t {
@@ -283,11 +291,7 @@ FredEmmott_USBIP_VirtPP_XPad::OnControlInputRequest(
       return FredEmmott_USBIP_VirtPP_Request_SendReply(request, reply);
     }
     if (recipient == Device && requestCode == 0x01) {
-      const auto lol = reinterpret_cast<uintptr_t>(this);
-      // High nibble of LSB is reserved
-      const auto serial = ((lol >> 32) ^ lol) & 0xffff'ff0f;
-      mInstance->Log("XPad serial number: {:#010x}", serial);
-      return FredEmmott_USBIP_VirtPP_Request_SendReply(request, serial);
+      return FredEmmott_USBIP_VirtPP_Request_SendReply(request, mSerialNumber);
     }
     mInstance->Log(
       "Unhandled vendor control input request {:#04x}/{:#04x}",

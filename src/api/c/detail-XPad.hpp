@@ -69,6 +69,8 @@ struct FredEmmott_USBIP_VirtPP_XPad final {
   static_assert(sizeof(XUSBInputReport) <= 32);
 #pragma pack(pop)
 
+  uint32_t mSerialNumber {};
+
 
   FredEmmott_USBIP_VirtPP_InstanceHandle mInstance {};
   XUSBInputReport mXUSBReport {};
