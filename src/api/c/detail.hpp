@@ -16,6 +16,8 @@
 // clang-format off
 #include <winsock2.h>
 #include <wil/resource.h>
+
+#include <mutex>
 // clang-format on
 
 struct FredEmmott_USBIP_VirtPP_Device final {
@@ -26,6 +28,8 @@ struct FredEmmott_USBIP_VirtPP_Device final {
   FredEmmott_USBIP_VirtPP_Device_Callbacks mCallbacks {};
   FredEmmott_USBSpec_DeviceDescriptor mDescriptor {};
   std::vector<FredEmmott_USBSpec_InterfaceDescriptor> mInterfaces {};
+
+  std::mutex mReplyMutex;
 
   void* mUserData {};
 
@@ -43,7 +47,7 @@ struct FredEmmott_USBIP_VirtPP_Device final {
 };
 
 struct FredEmmott_USBIP_VirtPP_Instance final {
-  using Bus = std::vector<FredEmmott_USBIP_VirtPP_Device>;
+  using Bus = std::vector<FredEmmott_USBIP_VirtPP_DeviceHandle>;
 
   FredEmmott_USBIP_VirtPP_Instance_InitData mInitData {};
 
@@ -107,12 +111,12 @@ struct FredEmmott_USBIP_VirtPP_Instance final {
   FredEmmott_USBIP_VirtPP_Result OnInputRequest(
     FredEmmott_USBIP_VirtPP_Device& device,
     const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request,
-    FredEmmott_USBIP_VirtPP_Request apiRequest);
+    FredEmmott_USBIP_VirtPP_Request& apiRequest);
   [[nodiscard]]
   FredEmmott_USBIP_VirtPP_Result OnOutputRequest(
     FredEmmott_USBIP_VirtPP_Device& device,
     const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request,
-    FredEmmott_USBIP_VirtPP_Request apiRequest);
+    FredEmmott_USBIP_VirtPP_Request& apiRequest);
 
   [[nodiscard]]
   FredEmmott_USBIP_VirtPP_Result OnSubmitRequest(

@@ -322,12 +322,12 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Instance::OnDevListOp() {
     return ret.error();
   for (auto&& [busIdx, bus]: std::views::enumerate(mBusses)) {
     for (auto&& [deviceIdx, device]: std::views::enumerate(bus)) {
-      const auto& config = device.mDescriptor;
+      const auto& config = device->mDescriptor;
       const auto usbipDevice = MakeUSBIPDevice(
-        busIdx + 1, deviceIdx + 1, config, device.mInterfaces.size());
+        busIdx + 1, deviceIdx + 1, config, device->mInterfaces.size());
       if (const auto ret = SendAll(mClientSocket, usbipDevice); !ret)
         return ret.error();
-      for (auto&& iface: device.mInterfaces) {
+      for (auto&& iface: device->mInterfaces) {
         const USBIP::Interface wireInterface {
           .mClass = iface.bInterfaceClass,
           .mSubClass = iface.bInterfaceSubClass,
@@ -354,8 +354,8 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Instance::OnImportOp(
       const auto usbipDevice = MakeUSBIPDevice(
         busIdx + 1,
         deviceIdx + 1,
-        device.mDescriptor,
-        device.mInterfaces.size());
+        device->mDescriptor,
+        device->mInterfaces.size());
 
       return SendAll(
                mClientSocket, USBIP::OP_REP_IMPORT {.mDevice = usbipDevice})
@@ -372,7 +372,7 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Instance::OnImportOp(
 FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Instance::OnInputRequest(
   FredEmmott_USBIP_VirtPP_Device& device,
   const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request,
-  const FredEmmott_USBIP_VirtPP_Request apiRequest) {
+  FredEmmott_USBIP_VirtPP_Request& apiRequest) {
   return device.mCallbacks.OnInputRequest(
     &apiRequest,
     request.mHeader.mEndpoint.NativeValue(),
@@ -387,7 +387,7 @@ FredEmmott_USBIP_VirtPP_Result
 FredEmmott_USBIP_VirtPP_Instance::OnOutputRequest(
   FredEmmott_USBIP_VirtPP_Device& device,
   const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request,
-  const FredEmmott_USBIP_VirtPP_Request apiRequest) {
+  FredEmmott_USBIP_VirtPP_Request& apiRequest) {
   if (device.mCallbacks.OnOutputRequest) {
     thread_local uint8_t buffer[1024] {};
     const auto dataLength = request.mTransferBufferLength.NativeValue();
@@ -444,8 +444,8 @@ FredEmmott_USBIP_VirtPP_Instance::OnSubmitRequest(
       deviceIndex);
     return HRESULT_FROM_WIN32(ERROR_INVALID_INDEX);
   }
-  auto& device = mBusses.at(busIndex).at(deviceIndex);
-  const FredEmmott_USBIP_VirtPP_Request apiRequest {
+  auto& device = *mBusses.at(busIndex).at(deviceIndex);
+  FredEmmott_USBIP_VirtPP_Request apiRequest {
     .mDevice = &device,
     .mSequenceNumber = request.mHeader.mSequenceNumber,
     .mTransferBufferLength = request.mTransferBufferLength.NativeValue(),
@@ -469,12 +469,12 @@ FredEmmott_USBIP_VirtPP_Instance::OnUnlinkRequest(
 void FredEmmott_USBIP_VirtPP_Instance::AutoAttach() {
   for (auto&& [i, bus]: std::views::enumerate(mBusses)) {
     for (auto&& [j, device]: std::views::enumerate(bus)) {
-      if (!device.mAutoAttach) {
+      if (!device->mAutoAttach) {
         continue;
       }
       const auto busID = std::format("{}-{}", i + 1, j + 1);
       Log("Auto-attaching device {}", busID);
-      std::ignore = device.Attach(busID);
+      std::ignore = device->Attach(busID);
     }
   }
 }

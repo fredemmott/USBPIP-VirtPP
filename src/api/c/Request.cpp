@@ -35,26 +35,27 @@ void* FredEmmott_USBIP_VirtPP_Request_GetDeviceUserData(
 }
 
 FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendReply(
-  const FredEmmott_USBIP_VirtPP_Request* const request,
+  FredEmmott_USBIP_VirtPP_RequestHandle request,
   const void* const data,
   const size_t dataSize) {
   const auto socket = request->mDevice->mInstance->mClientSocket;
   const auto actualLength
     = std::min<uint32_t>(dataSize, request->mTransferBufferLength);
-  USBIP::USBIP_RET_SUBMIT response{
+  USBIP::USBIP_RET_SUBMIT response {
     .mActualLength = actualLength,
   };
   response.mHeader.mSequenceNumber = request->mSequenceNumber;
-  if (const auto ret = SendAll(socket, response); !ret)
-  [[unlikely]] {
+
+  const std::unique_lock lock(request->mDevice->mReplyMutex);
+
+  if (const auto ret = SendAll(socket, response); !ret) [[unlikely]] {
     return std::bit_cast<FredEmmott_USBIP_VirtPP_Result>(ret.error());
   }
   if (actualLength == 0) {
     return FredEmmott_USBIP_VirtPP_SUCCESS;
   }
 
-  if (const auto ret = SendAll(socket, data, actualLength); !ret)
-  [[unlikely]] {
+  if (const auto ret = SendAll(socket, data, actualLength); !ret) [[unlikely]] {
     return std::bit_cast<FredEmmott_USBIP_VirtPP_Result>(ret.error());
   }
 
@@ -62,15 +63,14 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendReply(
 }
 
 FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendErrorReply(
-  const FredEmmott_USBIP_VirtPP_Request* const request,
+  FredEmmott_USBIP_VirtPP_RequestHandle request,
   const int32_t status) {
   const auto socket = request->mDevice->mInstance->mClientSocket;
-  USBIP::USBIP_RET_SUBMIT response{
-    .mStatus = status
-  };
+  USBIP::USBIP_RET_SUBMIT response {.mStatus = status};
   response.mHeader.mSequenceNumber = request->mSequenceNumber;
-  if (const auto ret = SendAll(socket, response); !ret)
-  [[unlikely]] {
+
+  const auto lock = std::unique_lock(request->mDevice->mReplyMutex);
+  if (const auto ret = SendAll(socket, response); !ret) [[unlikely]] {
     return std::bit_cast<FredEmmott_USBIP_VirtPP_Result>(ret.error());
   }
   return FredEmmott_USBIP_VirtPP_SUCCESS;
@@ -80,9 +80,8 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendStringReply(
   const FredEmmott_USBIP_VirtPP_RequestHandle handle,
   wchar_t const* data,
   size_t charCount) {
-  const auto byteCount = (charCount * 2) + offsetof(
-    _USB_STRING_DESCRIPTOR,
-    bString);
+  const auto byteCount
+    = (charCount * 2) + offsetof(_USB_STRING_DESCRIPTOR, bString);
   // TODO: check byteCount <= 0xff
   thread_local union {
     _USB_STRING_DESCRIPTOR descriptor;
@@ -97,4 +96,5 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendStringReply(
     handle,
     reply.bytes,
     byteCount);
+    handle, reply.bytes, byteCount);
 }

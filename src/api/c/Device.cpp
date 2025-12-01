@@ -129,7 +129,7 @@ FredEmmott_USBIP_VirtPP_Device::FredEmmott_USBIP_VirtPP_Device(
   if (instance->mBusses.empty()) {
     instance->mBusses.emplace_back();
   }
-  instance->mBusses.back().emplace_back(*this);
+  instance->mBusses.back().emplace_back(this);
 }
 
 FredEmmott_USBIP_VirtPP_DeviceHandle FredEmmott_USBIP_VirtPP_Device_Create(
@@ -215,7 +215,7 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Device::Attach(
 std::optional<std::string> FredEmmott_USBIP_VirtPP_Device::GetBusID() const {
   for (auto&& [i, bus]: std::views::enumerate(mInstance->mBusses)) {
     for (auto&& [j, device]: std::views::enumerate(bus)) {
-      if (&device == this) {
+      if (device == this) {
         return std::format("{}-{}", i + 1, j + 1);
       }
     }
