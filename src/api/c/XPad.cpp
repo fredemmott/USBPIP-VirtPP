@@ -200,8 +200,9 @@ FredEmmott_USBIP_VirtPP_XPad::OnControlInputRequest(
                 return FredEmmott_USBIP_VirtPP_Request_SendStringReply(
                   request, L"Fred Emmott");
               case StringIndex::Product:
+                // Required for interoperability with some older games
                 return FredEmmott_USBIP_VirtPP_Request_SendStringReply(
-                  request, L"Test XPad");
+                  request, L"XBOX 360 For Windows");
               case StringIndex::SerialNumber:
                 return FredEmmott_USBIP_VirtPP_Request_SendStringReply(
                   request, L"1234");
