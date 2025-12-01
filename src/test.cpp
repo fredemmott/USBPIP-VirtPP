@@ -3,6 +3,7 @@
 #include <FredEmmott/HIDSpec.h>
 #include <FredEmmott/USBIP-VirtPP/Core.h>
 #include <FredEmmott/USBIP-VirtPP/HIDDevice.h>
+#include <FredEmmott/USBIP-VirtPP/XPad.h>
 
 #include <functional>
 
@@ -349,6 +350,13 @@ FredEmmott_USBIP_VirtPP_HIDDeviceHandle Create(
   return FredEmmott_USBIP_VirtPP_HIDDevice_Create(instance, &hidInit);
 }
 }// namespace GamePad
+namespace XPad {
+FredEmmott_USBIP_VirtPP_XPadHandle Create(const FredEmmott_USBIP_VirtPP_InstanceHandle instance) {
+  constexpr FredEmmott_USBIP_VirtPP_XPad_InitData init {
+  };
+  return FredEmmott_USBIP_VirtPP_XPad_Create(instance, &init);
+}
+}
 }// namespace
 
 int main() {
@@ -369,6 +377,9 @@ int main() {
   const auto gamepad = wil::scope_exit(
     std::bind_front(
       &FredEmmott_USBIP_VirtPP_HIDDevice_Destroy, GamePad::Create(instance)));
+  const auto xpad = wil::scope_exit(
+    std::bind_front(
+      &FredEmmott_USBIP_VirtPP_XPad_Destroy, XPad::Create(instance)));
 
   FredEmmott_USBIP_VirtPP_Instance_Run(instance);
 

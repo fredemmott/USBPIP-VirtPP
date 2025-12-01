@@ -151,13 +151,11 @@ void FredEmmott_USBIP_VirtPP_Device_Destroy(
 
 FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Device_Attach(
   const FredEmmott_USBIP_VirtPP_DeviceHandle handle) {
-  return static_cast<FredEmmott_USBIP_VirtPP_Result>(handle->Attach().error_or(
-    S_OK));
+  return handle->Attach();
 }
 
-std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Device::Attach(
-  const std::string_view busID
-  ) const {
+FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Device::Attach(
+  const std::string_view busID) const {
   // I decided to directly use the IOCTL primarily because of the use of C++
   // STL containers in the libusbip API definition; lesser concerns are the
   // use of the C++ ABI more broadly as opposed to C API/ABI, and tying it
@@ -173,12 +171,12 @@ std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Device::Attach(
   } else if (const auto generated = GetBusID()) {
     strncpy_s(ioctlData.mBusID, generated->data(), generated->size());
   } else {
-    return std::unexpected{HRESULT_FROM_WIN32(ERROR_INVALID_INDEX)};
+    return HRESULT_FROM_WIN32(ERROR_INVALID_INDEX);
   }
 
   const auto targetPath = GetUSBIPWin32Path();
   if (!targetPath) {
-    return std::unexpected{targetPath.error()};
+    return targetPath.error();
   }
 
   const wil::unique_hfile target{
@@ -192,7 +190,7 @@ std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Device::Attach(
       nullptr)
   };
   if (!target) {
-    return std::unexpected{HRESULT_FROM_WIN32(GetLastError())};
+    return HRESULT_FROM_WIN32(GetLastError());
   }
 
   DWORD bytesReturned{};

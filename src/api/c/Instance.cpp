@@ -1,6 +1,7 @@
 // Copyright 2025 Fred Emmott <fred@fredemmott.com>
 // SPDX-License-Identifier: MIT
 
+#include "detail-RequestType.hpp"
 #include "detail.hpp"
 #include "send-recv.hpp"
 
@@ -273,28 +274,20 @@ HRESULT FredEmmott_USBIP_VirtPP_Instance::OnClientSocketActive(
           = RecvRemainder(clientSocket, &request.mOP_REQ_DEVLIST);
           !ret) [[unlikely]]
         return ret.error();
-      if (const auto ret = this->OnDevListOp(); !ret) [[unlikely]]
-        return ret.error();
-      return S_OK;
+      return this->OnDevListOp();
     case USBIP::CommandCode::OP_REQ_IMPORT:
       Log("-> Received REQ_IMPORT");
       if (const auto ret = RecvRemainder(clientSocket, &request.mOP_REQ_IMPORT);
           !ret) [[unlikely]]
         return ret.error();
-      if (const auto ret = this->OnImportOp(request.mOP_REQ_IMPORT); !ret)
-        [[unlikely]]
-        return ret.error();
-      return S_OK;
+      return this->OnImportOp(request.mOP_REQ_IMPORT);
     case USBIP::CommandCode::USBIP_CMD_SUBMIT:
       // Not logging here, way too spammy :)
       if (const auto ret
           = RecvRemainder(clientSocket, &request.mUSBIP_CMD_SUBMIT);
           !ret) [[unlikely]]
         return ret.error();
-      if (const auto ret = this->OnSubmitRequest(request.mUSBIP_CMD_SUBMIT);
-          !ret) [[unlikely]]
-        return ret.error();
-      return S_OK;
+      return this->OnSubmitRequest(request.mUSBIP_CMD_SUBMIT);
     case USBIP::CommandCode::USBIP_CMD_UNLINK: {
       Log("-> Received CMD_UNLINK");
       if (const auto ret
@@ -320,20 +313,20 @@ HRESULT FredEmmott_USBIP_VirtPP_Instance::OnClientSocketActive(
   }
 }
 
-std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnDevListOp() {
+FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Instance::OnDevListOp() {
   const USBIP::OP_REP_DEVLIST header {
     .mNumDevices = static_cast<uint32_t>(std::ranges::fold_left(
       mBusses, 0, [](auto acc, const auto& bus) { return acc + bus.size(); })),
   };
   if (const auto ret = SendAll(mClientSocket, header); !ret)
-    return ret;
+    return ret.error();
   for (auto&& [busIdx, bus]: std::views::enumerate(mBusses)) {
     for (auto&& [deviceIdx, device]: std::views::enumerate(bus)) {
       const auto& config = device.mDescriptor;
       const auto usbipDevice = MakeUSBIPDevice(
         busIdx + 1, deviceIdx + 1, config, device.mInterfaces.size());
       if (const auto ret = SendAll(mClientSocket, usbipDevice); !ret)
-        return ret;
+        return ret.error();
       for (auto&& iface: device.mInterfaces) {
         const USBIP::Interface wireInterface {
           .mClass = iface.bInterfaceClass,
@@ -341,7 +334,7 @@ std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnDevListOp() {
           .mProtocol = iface.bInterfaceProtocol,
         };
         if (const auto ret = SendAll(mClientSocket, wireInterface); !ret)
-          return ret;
+          return ret.error();
       }
     }
   }
@@ -349,7 +342,7 @@ std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnDevListOp() {
   return {};
 }
 
-std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnImportOp(
+FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Instance::OnImportOp(
   const FredEmmott::USBIP::OP_REQ_IMPORT& request) {
   const std::string_view busId {request.mBusID};
 
@@ -364,25 +357,23 @@ std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnImportOp(
         device.mDescriptor,
         device.mInterfaces.size());
 
-      if (const auto ret = SendAll(
-            mClientSocket, USBIP::OP_REP_IMPORT {.mDevice = usbipDevice});
-          !ret)
-        return ret;
-      return {};
+      return SendAll(
+               mClientSocket, USBIP::OP_REP_IMPORT {.mDevice = usbipDevice})
+        .error_or(S_OK);
     }
   }
 
   LogError("Failed to find device with busID '{}'", busId);
   USBIP::OP_REP_IMPORT reply {};
   reply.mHeader.mStatus = 1;// per spec, 1 for error
-  return SendAll(mClientSocket, reply);
+  return SendAll(mClientSocket, reply).error_or(S_OK);
 }
 
-std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnInputRequest(
+FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Instance::OnInputRequest(
   FredEmmott_USBIP_VirtPP_Device& device,
   const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request,
   const FredEmmott_USBIP_VirtPP_Request apiRequest) {
-  const auto ret = device.mCallbacks.OnInputRequest(
+  return device.mCallbacks.OnInputRequest(
     &apiRequest,
     request.mHeader.mEndpoint.NativeValue(),
     request.mSetup.mRequestType,
@@ -390,13 +381,57 @@ std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnInputRequest(
     request.mSetup.mValue,
     request.mSetup.mIndex,
     request.mSetup.mLength);
-  if (FredEmmott_USBIP_VirtPP_SUCCEEDED(ret)) [[likely]] {
-    return {};
-  }
-  return std::unexpected {std::bit_cast<HRESULT>(ret)};
 }
 
-std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnSubmitRequest(
+FredEmmott_USBIP_VirtPP_Result
+FredEmmott_USBIP_VirtPP_Instance::OnOutputRequest(
+  FredEmmott_USBIP_VirtPP_Device& device,
+  const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request,
+  const FredEmmott_USBIP_VirtPP_Request apiRequest) {
+  if (device.mCallbacks.OnOutputRequest) {
+    thread_local uint8_t buffer[1024] {};
+    const auto dataLength = request.mTransferBufferLength.NativeValue();
+    if (dataLength > std::size(buffer)) {
+      __debugbreak();
+    }
+    if (dataLength > 0) {
+      if (const auto ret = RecvAll(mClientSocket, buffer, dataLength); !ret)
+        [[unlikely]] {
+        return ret.error();
+      }
+    }
+
+    return device.mCallbacks.OnOutputRequest(
+      &apiRequest,
+      request.mHeader.mEndpoint.NativeValue(),
+      request.mSetup.mRequestType,
+      request.mSetup.mRequest,
+      request.mSetup.mValue,
+      request.mSetup.mIndex,
+      request.mSetup.mLength,
+      dataLength ? buffer : nullptr,
+      dataLength);
+  }
+
+  const auto [urbDirection, requestType, recipient]
+    = RequestType::Parse(request.mSetup.mRequestType);
+  if (requestType == RequestType::Type::Standard) {
+    switch (request.mSetup.mRequest) {
+      case 0x09:// SET_CONFIGURATION no-op, we only support 1 configuration
+      case 0x0A:// SET_IDLE: no-op
+        // Not actually an error with code 0
+        return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(&apiRequest, 0);
+      default:
+        return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(
+          &apiRequest, -EPIPE);
+    }
+  }
+
+  return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(&apiRequest, -EPIPE);
+}
+
+FredEmmott_USBIP_VirtPP_Result
+FredEmmott_USBIP_VirtPP_Instance::OnSubmitRequest(
   const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request) {
   const auto busIndex = (request.mHeader.mDeviceID.NativeValue() >> 16) - 1;
   const auto deviceIndex
@@ -407,7 +442,7 @@ std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnSubmitRequest(
       "Received submit request for invalid device: bus {}, device {}",
       busIndex,
       deviceIndex);
-    return std::unexpected {HRESULT_FROM_WIN32(ERROR_INVALID_INDEX)};
+    return HRESULT_FROM_WIN32(ERROR_INVALID_INDEX);
   }
   auto& device = mBusses.at(busIndex).at(deviceIndex);
   const FredEmmott_USBIP_VirtPP_Request apiRequest {
@@ -420,58 +455,15 @@ std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnSubmitRequest(
     return OnInputRequest(device, request, apiRequest);
   }
 
-  if (request.mSetup.mRequestType == 0) {
-    constexpr auto SetConfiguration = 0x09;
-    switch (request.mSetup.mRequest) {
-      case SetConfiguration:// no-op, we only support 1 configuration
-        if (const auto ret = FredEmmott_USBIP_VirtPP_Request_SendReply(
-              &apiRequest, nullptr, 0);
-            !FredEmmott_USBIP_VirtPP_SUCCEEDED(ret)) [[unlikely]] {
-          return std::unexpected {static_cast<HRESULT>(ret)};
-        }
-        return {};
-      default:
-        __debugbreak();
-    }
-  }
-
-  if (
-    (request.mSetup.mRequestType & 0x20) == 0x20
-    && request.mSetup.mRequest == 0x0a) {
-    // SET_IDLE
-    // We don't suport repeating.
-    if (const auto ret
-        = FredEmmott_USBIP_VirtPP_Request_SendReply(&apiRequest, nullptr, 0);
-        !FredEmmott_USBIP_VirtPP_SUCCEEDED(ret)) [[unlikely]] {
-      return std::unexpected {static_cast<HRESULT>(ret)};
-    }
-    return {};
-  }
-
-  constexpr auto HostToInterface = 0x21;
-  constexpr auto SetReport = 0x09;
-  if (request.mSetup.mRequestType == HostToInterface && request.mSetup.mRequest == SetReport) {
-    thread_local char buf[1024];
-    recv(mClientSocket, buf, request.mTransferBufferLength.NativeValue(), 0);
-    // TODO: move to device
-    if (const auto ret = FredEmmott_USBIP_VirtPP_Request_SendErrorReply(&apiRequest, 0); ! FredEmmott_USBIP_VirtPP_SUCCEEDED(ret)) [[unlikely]] {;
-      return std::unexpected {static_cast<HRESULT>(ret)};
-    }
-    return {};
-  }
-
-  LogError("TODO: ouput requests");
-#ifndef _NDEBUG
-  __debugbreak();
-#endif
-  return std::unexpected {HRESULT_FROM_WIN32(ERROR_BAD_ARGUMENTS)};
+  return OnOutputRequest(device, request, apiRequest);
 }
 
-std::expected<void, HRESULT> FredEmmott_USBIP_VirtPP_Instance::OnUnlinkRequest(
+FredEmmott_USBIP_VirtPP_Result
+FredEmmott_USBIP_VirtPP_Instance::OnUnlinkRequest(
   const USBIP::USBIP_CMD_UNLINK& request) {
   USBIP::USBIP_RET_UNLINK response {};
   response.mHeader.mSequenceNumber = request.mHeader.mSequenceNumber;
-  return SendAll(mClientSocket, response);
+  return SendAll(mClientSocket, response).error_or(S_OK);
 }
 
 void FredEmmott_USBIP_VirtPP_Instance::AutoAttach() {

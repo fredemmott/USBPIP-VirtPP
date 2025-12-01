@@ -3,6 +3,7 @@
 
 #include "detail-hid.hpp"
 #include "detail.hpp"
+#include "detail-RequestType.hpp"
 
 #include <FredEmmott/HIDSpec.h>
 #include <FredEmmott/USBIP-VirtPP/Device.h>
@@ -138,7 +139,8 @@ void FredEmmott_USBIP_VirtPP_HIDDevice::InitializeDescriptors() {
     .bDescriptorType = 0x02,// CONFIGURATION
     .wTotalLength = static_cast<uint16_t>(totalSize),
     .bNumInterfaces = 1,
-    .iConfiguration = 0,
+    .bConfigurationValue = 1,
+    .iConfiguration = 1,
     .bmAttributes = 0x80 | 0x20,// bus-powered, remote wake
     .MaxPower = 0x32,// 100mA
   };
@@ -174,7 +176,7 @@ void FredEmmott_USBIP_VirtPP_HIDDevice::InitializeDescriptors() {
     .bDescriptorType = 0x05,// ENDPOINT
     .bEndpointAddress = 0x80 | 0x01,// IN, EP1
     .bmAttributes = 0x03,// Interrupt
-    .wMaxPacketSize = 0x04,// 64
+    .wMaxPacketSize = 0x08,
     .bInterval = 0x0A,// 10ms
   };
   endpoints[1] = {
@@ -186,32 +188,6 @@ void FredEmmott_USBIP_VirtPP_HIDDevice::InitializeDescriptors() {
     .bInterval = 0x0A,// 10ms
   };
 }
-
-namespace RequestType {
-enum class Recipient : uint8_t {
-  Device = 0,
-  Interface = 1,
-  Endpoint = 2,
-};
-enum class Type : uint8_t {
-  Standard = 0,
-  Class = 1,
-  Vendor = 2,
-};
-enum class Direction : uint8_t {
-  HostToDevice = 0,
-  DeviceToHost = 1,
-};
-
-constexpr auto Parse(const uint8_t value) {
-  return std::tuple {
-    static_cast<Direction>(value >> 7),
-    static_cast<Type>((value >> 5) & 0b11),
-    static_cast<Recipient>(value & 0b11111),
-  };
-}
-
-}// namespace RequestType
 
 HRESULT FredEmmott_USBIP_VirtPP_HIDDevice::OnUSBInputRequest(
   const FredEmmott_USBIP_VirtPP_RequestHandle request,

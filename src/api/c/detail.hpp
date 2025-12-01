@@ -5,29 +5,29 @@
 #include <FredEmmott/USBIP-VirtPP/Core.h>
 #include <FredEmmott/USBIP-VirtPP/Device.h>
 #include <FredEmmott/USBIP.hpp>
-#include <stop_token>
-#include <optional>
-#include <expected>
-
-#include <vector>
-
-#include <winsock2.h>
-#include <wil/resource.h>
 
 #include <format>
+#include <optional>
 #include <print>
+#include <stop_token>
 #include <string_view>
+#include <vector>
+
+// clang-format off
+#include <winsock2.h>
+#include <wil/resource.h>
+// clang-format on
 
 struct FredEmmott_USBIP_VirtPP_Device final {
-  bool mAutoAttach{};
+  bool mAutoAttach {};
 
-  FredEmmott_USBIP_VirtPP_InstanceHandle mInstance{};
+  FredEmmott_USBIP_VirtPP_InstanceHandle mInstance {};
 
-  FredEmmott_USBIP_VirtPP_Device_Callbacks mCallbacks{};
-  FredEmmott_USBSpec_DeviceDescriptor mDescriptor{};
-  std::vector<FredEmmott_USBSpec_InterfaceDescriptor> mInterfaces{};
+  FredEmmott_USBIP_VirtPP_Device_Callbacks mCallbacks {};
+  FredEmmott_USBSpec_DeviceDescriptor mDescriptor {};
+  std::vector<FredEmmott_USBSpec_InterfaceDescriptor> mInterfaces {};
 
-  void* mUserData{};
+  void* mUserData {};
 
   FredEmmott_USBIP_VirtPP_Device() = delete;
   explicit FredEmmott_USBIP_VirtPP_Device(
@@ -35,24 +35,24 @@ struct FredEmmott_USBIP_VirtPP_Device final {
     const FredEmmott_USBIP_VirtPP_Device_InitData*);
   ~FredEmmott_USBIP_VirtPP_Device() = default;
 
-  std::expected<void, HRESULT> Attach(
-    std::string_view busID = {}) const;
+  [[nodiscard]]
+  FredEmmott_USBIP_VirtPP_Result Attach(std::string_view busID = {}) const;
 
-private:
+ private:
   std::optional<std::string> GetBusID() const;
 };
 
 struct FredEmmott_USBIP_VirtPP_Instance final {
   using Bus = std::vector<FredEmmott_USBIP_VirtPP_Device>;
 
-  FredEmmott_USBIP_VirtPP_Instance_InitData mInitData{};
+  FredEmmott_USBIP_VirtPP_Instance_InitData mInitData {};
 
   std::stop_source mStopSource;
 
-  wil::unique_socket mListeningSocket{};
-  SOCKET mClientSocket{INVALID_SOCKET};
+  wil::unique_socket mListeningSocket {};
+  SOCKET mClientSocket {INVALID_SOCKET};
 
-  std::vector<Bus> mBusses{};
+  std::vector<Bus> mBusses {};
 
   FredEmmott_USBIP_VirtPP_Instance() = delete;
   explicit FredEmmott_USBIP_VirtPP_Instance(
@@ -70,9 +70,8 @@ struct FredEmmott_USBIP_VirtPP_Instance final {
       callback(severity, formatted.c_str(), formatted.size());
     } else {
       std::println(
-        (severity >= FredEmmott_USBIP_VirtPP_LogSeverity_Error)
-        ? stderr
-        : stdout,
+        (severity >= FredEmmott_USBIP_VirtPP_LogSeverity_Error) ? stderr
+                                                                : stdout,
         fmt,
         std::forward<Args>(args)...);
     }
@@ -96,27 +95,36 @@ struct FredEmmott_USBIP_VirtPP_Instance final {
 
   void Run();
 
-private:
-  bool mNeedWSACleanup{false};
+ private:
+  bool mNeedWSACleanup {false};
 
- [[nodiscard]] HRESULT OnClientSocketActive(SOCKET);
-  std::expected<void, HRESULT> OnDevListOp();
-  std::expected<void, HRESULT> OnImportOp(
+  [[nodiscard]] HRESULT OnClientSocketActive(SOCKET);
+  [[nodiscard]] FredEmmott_USBIP_VirtPP_Result OnDevListOp();
+  [[nodiscard]] FredEmmott_USBIP_VirtPP_Result OnImportOp(
     const FredEmmott::USBIP::OP_REQ_IMPORT&);
-  std::expected<void, HRESULT> OnInputRequest(
+
+  [[nodiscard]]
+  FredEmmott_USBIP_VirtPP_Result OnInputRequest(
     FredEmmott_USBIP_VirtPP_Device& device,
     const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request,
     FredEmmott_USBIP_VirtPP_Request apiRequest);
-  std::expected<void, HRESULT> OnSubmitRequest(
+  [[nodiscard]]
+  FredEmmott_USBIP_VirtPP_Result OnOutputRequest(
+    FredEmmott_USBIP_VirtPP_Device& device,
+    const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request,
+    FredEmmott_USBIP_VirtPP_Request apiRequest);
+
+  [[nodiscard]]
+  FredEmmott_USBIP_VirtPP_Result OnSubmitRequest(
     const FredEmmott::USBIP::USBIP_CMD_SUBMIT&);
-  std::expected<void, HRESULT> OnUnlinkRequest(
+  [[nodiscard]] FredEmmott_USBIP_VirtPP_Result OnUnlinkRequest(
     const FredEmmott::USBIP::USBIP_CMD_UNLINK&);
 
   void AutoAttach();
 };
 
 struct FredEmmott_USBIP_VirtPP_Request {
-  FredEmmott_USBIP_VirtPP_DeviceHandle mDevice{};
-  uint32_t mSequenceNumber{};
-  uint32_t mTransferBufferLength{};
+  FredEmmott_USBIP_VirtPP_DeviceHandle mDevice {};
+  uint32_t mSequenceNumber {};
+  uint32_t mTransferBufferLength {};
 };

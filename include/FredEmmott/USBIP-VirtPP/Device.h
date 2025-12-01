@@ -26,8 +26,22 @@ struct FredEmmott_USBIP_VirtPP_Device_Callbacks {
     uint8_t request,
     uint16_t value,
     uint16_t index,
-    uint16_t length
-    );
+    uint16_t length);
+  /* Optional; default implementation will no-op SET_CONFIGURATION, and
+   * fail others
+   *
+   * `data` may be a null pointer if `dataLength` is 0.
+   */
+  FredEmmott_USBIP_VirtPP_Result (*OnOutputRequest)(
+    FredEmmott_USBIP_VirtPP_RequestHandle,
+    uint32_t endpoint,
+    uint8_t requestType,
+    uint8_t request,
+    uint16_t value,
+    uint16_t index,
+    uint16_t length,
+    const void* data,
+    uint32_t dataLength);
 };
 
 struct FredEmmott_USBIP_VirtPP_Device_InitData {
