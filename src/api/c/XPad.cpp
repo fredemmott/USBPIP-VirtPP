@@ -465,3 +465,17 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_XPad_UpdateInPlace(
     FredEmmott_USBIP_VirtPP_XPad_State*)) {
   return handle->UpdateInPlace(userData, callback);
 }
+
+FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_XPad_SetState(
+  FredEmmott_USBIP_VirtPP_XPadHandle handle,
+  const FredEmmott_USBIP_VirtPP_XPad_State* state) {
+  return FredEmmott_USBIP_VirtPP_XPad_UpdateInPlace(
+    handle,
+    const_cast<FredEmmott_USBIP_VirtPP_XPad_State*>(state),
+    [](
+      FredEmmott_USBIP_VirtPP_XPadHandle,
+      void* stateIn,
+      FredEmmott_USBIP_VirtPP_XPad_State* stateOut) {
+      memcpy(stateOut, stateIn, sizeof(FredEmmott_USBIP_VirtPP_XPad_State));
+    });
+}

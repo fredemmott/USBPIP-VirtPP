@@ -69,6 +69,9 @@ void* FredEmmott_USBIP_VirtPP_XPad_GetUserData(
 /* Update the state of an XPad in-place.
  *
  * userData does not need to match the userData from the initData
+ *
+ * You should try to only call this if you are definitely going to modify the
+ * data.
  */
 FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_XPad_UpdateInPlace(
   FredEmmott_USBIP_VirtPP_XPadHandle,
@@ -77,6 +80,16 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_XPad_UpdateInPlace(
     FredEmmott_USBIP_VirtPP_XPadHandle,
     void* userData,
     FredEmmott_USBIP_VirtPP_XPad_State*));
+
+/** Update state, copying the data.
+ *
+ * This is a bit simpler to use, but less efficient.
+ *
+ * You should try to only call this if the data has actually changed.
+ */
+FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_XPad_SetState(
+  FredEmmott_USBIP_VirtPP_XPadHandle,
+  const FredEmmott_USBIP_VirtPP_XPad_State*);
 
 #ifdef __cplusplus
 }// extern "C"
