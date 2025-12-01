@@ -358,14 +358,14 @@ FredEmmott_USBIP_VirtPP_XPad::OnGamepadOutputRequest(
   const Report& report = *static_cast<const Report*>(data);
   switch (report.bReportID) {
     case 0x00:// rumble
-      __debugbreak();
-      break;
+      // TODO
+      return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(request, 0);
     case 0x01:// LEDS
       mInstance->Log("XPad LED state changed to {:#04x}", report.mLEDs.mState);
       mXUSBReport.mGamepadLEDStatusReport.mState = report.mLEDs.mState;
       return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(request, 0);
     case 0x02:// rumble level
-      mInstance->Log("XPad rumble state changed to {:#04x}", report.mRumbleLevel.mState);
+      mInstance->Log("XPad rumble level changed to {:#04x}", report.mRumbleLevel.mState);
       mXUSBReport.mGamepadRumbleLevelStatusReport.mState = report.mRumbleLevel.mState;
       return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(request, 0);
   }
