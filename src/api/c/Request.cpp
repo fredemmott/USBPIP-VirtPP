@@ -93,8 +93,18 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendStringReply(
   };
   memcpy(reply.descriptor.bString, data, charCount * 2);
   return FredEmmott_USBIP_VirtPP_Request_SendReply(
-    handle,
-    reply.bytes,
-    byteCount);
     handle, reply.bytes, byteCount);
+}
+
+FredEmmott_USBIP_VirtPP_RequestHandle FredEmmott_USBIP_VirtPP_Request_Clone(
+  const FredEmmott_USBIP_VirtPP_RequestHandle orig) {
+  if (!orig) {
+    return nullptr;
+  }
+  return new FredEmmott_USBIP_VirtPP_Request(*orig);
+}
+
+void FredEmmott_USBIP_Virtpp_Request_Detroy(
+  FredEmmott_USBIP_VirtPP_RequestHandle handle) {
+  delete handle;
 }

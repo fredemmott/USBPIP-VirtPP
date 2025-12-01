@@ -46,6 +46,23 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendErrorReply(
   FredEmmott_USBIP_VirtPP_RequestHandle,
   int32_t status);
 
+/** Clone a RequestHandle.
+ *
+ * You must call `FredEmmott_USBIP_VirtPP_Request_Destroy()` on the cloned
+ * handle when you are done with it.
+ *
+ * This is useful for async responses.
+ */
+FredEmmott_USBIP_VirtPP_RequestHandle FredEmmott_USBIP_VirtPP_Request_Clone(
+  FredEmmott_USBIP_VirtPP_RequestHandle);
+/** Destroy a cloned request handle.
+ *
+ * DO NOT PASS A REQUEST HANDLE THAT YOU DID NOT CREATE YOURSELF BY CALLING
+ * `_Clone()`
+ */
+void FredEmmott_USBIP_VirtPP_Request_Destroy(
+  FredEmmott_USBIP_VirtPP_RequestHandle);
+
 /***** END *****/
 
 #ifdef __cplusplus
