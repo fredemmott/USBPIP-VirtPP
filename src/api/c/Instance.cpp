@@ -447,6 +447,7 @@ FredEmmott_USBIP_VirtPP_Instance::OnSubmitRequest(
   auto& device = *mBusses.at(busIndex).at(deviceIndex);
   FredEmmott_USBIP_VirtPP_Request apiRequest {
     .mDevice = &device,
+    .mSocket = mClientSocket,
     .mSequenceNumber = request.mHeader.mSequenceNumber,
     .mTransferBufferLength = request.mTransferBufferLength.NativeValue(),
   };

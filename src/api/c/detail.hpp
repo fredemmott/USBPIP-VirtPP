@@ -129,6 +129,7 @@ struct FredEmmott_USBIP_VirtPP_Instance final {
 
 struct FredEmmott_USBIP_VirtPP_Request {
   FredEmmott_USBIP_VirtPP_DeviceHandle mDevice {};
+  SOCKET mSocket { INVALID_SOCKET };
   uint32_t mSequenceNumber {};
   uint32_t mTransferBufferLength {};
 };

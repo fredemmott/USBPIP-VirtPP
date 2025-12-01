@@ -14,20 +14,15 @@ extern "C" {
 struct FredEmmott_USBIP_VirtPP_XPad;
 typedef FredEmmott_USBIP_VirtPP_XPad* FredEmmott_USBIP_VirtPP_XPadHandle;
 
-struct FredEmmott_USBIP_VirtPP_XPad_Callbacks {};
+struct FredEmmott_USBIP_VirtPP_XPad_Callbacks {
+  uint8_t reserved; /* empty struct size varies between C and C++ */
+};
 struct FredEmmott_USBIP_VirtPP_XPad_InitData {
   void* mUserData;
   FredEmmott_USBIP_VirtPP_XPad_Callbacks mCallbacks;
 
   bool mAutoAttach;
 };
-
-FredEmmott_USBIP_VirtPP_XPadHandle FredEmmott_USBIP_VirtPP_XPad_Create(
-  FredEmmott_USBIP_VirtPP_InstanceHandle,
-  const FredEmmott_USBIP_VirtPP_XPad_InitData*);
-void FredEmmott_USBIP_VirtPP_XPad_Destroy(FredEmmott_USBIP_VirtPP_XPadHandle);
-void* FredEmmott_USBIP_VirtPP_XPad_GetUserData(
-  FredEmmott_USBIP_VirtPP_XPadHandle);
 
 enum FredEmmott_USBIP_VirtPP_XPad_Buttons : uint16_t {
   FredEmmott_USBIP_VirtPP_XPad_Button_DPadUp = (1 << 0),
@@ -57,12 +52,31 @@ struct FredEmmott_USBIP_VirtPP_XPad_State {
   uint16_t bmButtons;
   uint8_t bLeftTrigger;
   uint8_t bRightTrigger;
-  uint16_t wThumbLeftX;
-  uint16_t wThumbLeftY;
-  uint16_t wThumbRightX;
-  uint16_t wThumbRightY;
+  int16_t wThumbLeftX;
+  int16_t wThumbLeftY;
+  int16_t wThumbRightX;
+  int16_t wThumbRightY;
 };
 static_assert(sizeof(FredEmmott_USBIP_VirtPP_XPad_State) == 12);
+
+FredEmmott_USBIP_VirtPP_XPadHandle FredEmmott_USBIP_VirtPP_XPad_Create(
+  FredEmmott_USBIP_VirtPP_InstanceHandle,
+  const FredEmmott_USBIP_VirtPP_XPad_InitData*);
+void FredEmmott_USBIP_VirtPP_XPad_Destroy(FredEmmott_USBIP_VirtPP_XPadHandle);
+void* FredEmmott_USBIP_VirtPP_XPad_GetUserData(
+  FredEmmott_USBIP_VirtPP_XPadHandle);
+
+/* Update the state of an XPad in-place.
+ *
+ * userData does not need to match the userData from the initData
+ */
+FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_XPad_UpdateInPlace(
+  FredEmmott_USBIP_VirtPP_XPadHandle,
+  void *userData,
+  void (*)(
+    FredEmmott_USBIP_VirtPP_XPadHandle,
+    void* userData,
+    FredEmmott_USBIP_VirtPP_XPad_State*));
 
 #ifdef __cplusplus
 }// extern "C"

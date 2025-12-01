@@ -38,7 +38,7 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Request_SendReply(
   FredEmmott_USBIP_VirtPP_RequestHandle request,
   const void* const data,
   const size_t dataSize) {
-  const auto socket = request->mDevice->mInstance->mClientSocket;
+  const auto socket = request->mSocket;
   const auto actualLength
     = std::min<uint32_t>(dataSize, request->mTransferBufferLength);
   USBIP::USBIP_RET_SUBMIT response {

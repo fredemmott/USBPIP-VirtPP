@@ -6,6 +6,8 @@
 #include <FredEmmott/USBIP-VirtPP/XPad.h>
 
 #include <functional>
+#include <future>
+#include <numbers>
 
 namespace {
 
@@ -351,12 +353,12 @@ FredEmmott_USBIP_VirtPP_HIDDeviceHandle Create(
 }
 }// namespace GamePad
 namespace XPad {
-FredEmmott_USBIP_VirtPP_XPadHandle Create(const FredEmmott_USBIP_VirtPP_InstanceHandle instance) {
-  constexpr FredEmmott_USBIP_VirtPP_XPad_InitData init {
-  };
+FredEmmott_USBIP_VirtPP_XPadHandle Create(
+  const FredEmmott_USBIP_VirtPP_InstanceHandle instance) {
+  constexpr FredEmmott_USBIP_VirtPP_XPad_InitData init {};
   return FredEmmott_USBIP_VirtPP_XPad_Create(instance, &init);
 }
-}
+}// namespace XPad
 }// namespace
 
 int main() {
@@ -377,9 +379,31 @@ int main() {
   const auto gamepad = wil::scope_exit(
     std::bind_front(
       &FredEmmott_USBIP_VirtPP_HIDDevice_Destroy, GamePad::Create(instance)));
-  const auto xpad = wil::scope_exit(
-    std::bind_front(
-      &FredEmmott_USBIP_VirtPP_XPad_Destroy, XPad::Create(instance)));
+  const auto xpad = XPad::Create(instance);
+  const auto destroyXPad = wil::scope_exit(
+    std::bind_front(&FredEmmott_USBIP_VirtPP_XPad_Destroy, xpad));
+
+  const auto feeder = std::async([xpad]() {
+    while (true) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      FredEmmott_USBIP_VirtPP_XPad_UpdateInPlace(
+        xpad,
+        nullptr,
+        [](
+          FredEmmott_USBIP_VirtPP_XPadHandle,
+          void*,
+          FredEmmott_USBIP_VirtPP_XPad_State* state) {
+          const auto now
+            = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now().time_since_epoch())
+                .count();
+          constexpr auto radius = 32767;
+          const auto angle = (now / 10.0) * std::numbers::pi_v<float> / 180.0;
+          state->wThumbLeftX = static_cast<int16_t>(radius * cos(angle));
+          state->wThumbLeftY = static_cast<int16_t>(radius * sin(angle));
+        });
+    }
+  });
 
   FredEmmott_USBIP_VirtPP_Instance_Run(instance);
 

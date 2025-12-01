@@ -7,8 +7,6 @@
 
 #include <FredEmmott/USBIP-VirtPP/XPad.h>
 
-#include <chrono>
-
 namespace {
 enum class Interface : uint8_t {
   Gamepad = 0,
@@ -27,6 +25,27 @@ enum class StringIndex : uint8_t {
   MSOS = 0xEE,
 };
 }// namespace
+
+FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_XPad::UpdateInPlace(
+  void* userData,
+  void (*callback)(
+    FredEmmott_USBIP_VirtPP_XPadHandle,
+    void* userData,
+    FredEmmott_USBIP_VirtPP_XPad_State*)) {
+  callback(this, userData, &mXUSBReport.mGamepadInputReport.mState);
+
+  std::unique_ptr<FredEmmott_USBIP_VirtPP_Request> request;
+  {
+    const auto queue = mGamepadInputQueue.lock();
+    if (queue->empty()) {
+      return FredEmmott_USBIP_VirtPP_SUCCESS;
+    }
+    request.reset(queue->front());
+    queue->pop();
+  }
+
+  return FredEmmott_USBIP_VirtPP_Request_SendReply(request.get(), mXUSBReport);
+}
 
 const FredEmmott_USBSpec_DeviceDescriptor&
 FredEmmott_USBIP_VirtPP_XPad::GetDeviceDescriptor() {
@@ -323,19 +342,9 @@ FredEmmott_USBIP_VirtPP_XPad::OnGamepadInputRequest(
   using enum RequestType::Type;
   using enum RequestType::Recipient;
   if (rawRequestType == 0 && requestCode == 0) {
-    // Not really documented in the spec: with all zeroes, we can return
-    // multiple reports. Just return everything.
-    const auto now = std::chrono::duration_cast<std::chrono::seconds>(
-                       std::chrono::steady_clock::now().time_since_epoch())
-                       .count();
-    mXUSBReport.mGamepadInputReport.mState.bmButtons = 0;
-    if (now % 2) {
-      mXUSBReport.mGamepadInputReport.mState.bmButtons
-        |= FredEmmott_USBIP_VirtPP_XPad_Button_A;
-    }
-    mXUSBReport.mGamepadInputReport.mState.bLeftTrigger = now % 0xff;
-
-    return FredEmmott_USBIP_VirtPP_Request_SendReply(request, mXUSBReport);
+    const auto queue = mGamepadInputQueue.lock();
+    queue->push(FredEmmott_USBIP_VirtPP_Request_Clone(request));
+    return S_OK;
   }
   return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(request, -EPIPE);
 }
@@ -370,8 +379,10 @@ FredEmmott_USBIP_VirtPP_XPad::OnGamepadOutputRequest(
       mXUSBReport.mGamepadLEDStatusReport.mState = report.mLEDs.mState;
       return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(request, 0);
     case 0x02:// rumble level
-      mInstance->Log("XPad rumble level changed to {:#04x}", report.mRumbleLevel.mState);
-      mXUSBReport.mGamepadRumbleLevelStatusReport.mState = report.mRumbleLevel.mState;
+      mInstance->Log(
+        "XPad rumble level changed to {:#04x}", report.mRumbleLevel.mState);
+      mXUSBReport.mGamepadRumbleLevelStatusReport.mState
+        = report.mRumbleLevel.mState;
       return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(request, 0);
   }
   return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(request, -EPIPE);
@@ -444,4 +455,13 @@ FredEmmott_USBIP_VirtPP_XPad::OnUSBOutputRequestCallback(
       __debugbreak();
       return -1;
   }
+}
+FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_XPad_UpdateInPlace(
+  FredEmmott_USBIP_VirtPP_XPadHandle handle,
+  void* userData,
+  void (*callback)(
+    FredEmmott_USBIP_VirtPP_XPadHandle,
+    void* userData,
+    FredEmmott_USBIP_VirtPP_XPad_State*)) {
+  return handle->UpdateInPlace(userData, callback);
 }
