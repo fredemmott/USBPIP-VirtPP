@@ -166,7 +166,9 @@ void* FredEmmott_USBIP_VirtPP_XPad_GetUserData(
 FredEmmott_USBIP_VirtPP_XPad::FredEmmott_USBIP_VirtPP_XPad(
   FredEmmott_USBIP_VirtPP_InstanceHandle instance,
   const FredEmmott_USBIP_VirtPP_XPad_InitData& initData)
-  : mUserData(initData.mUserData), mInstance(instance) {
+  : mUserData(initData.mUserData),
+    mInstance(instance),
+    mCallbacks(initData.mCallbacks) {
   const FredEmmott_USBIP_VirtPP_Device_InitData usbDeviceInit {
     .mUserData = this,
     .mCallbacks = {&OnUSBInputRequestCallback, &OnUSBOutputRequestCallback},
@@ -374,7 +376,12 @@ FredEmmott_USBIP_VirtPP_XPad::OnGamepadOutputRequest(
   const Report& report = *static_cast<const Report*>(data);
   switch (report.bReportID) {
     case 0x00:// rumble
-      // TODO
+      if (mCallbacks.OnRumble) {
+        mCallbacks.OnRumble(
+          this,
+          report.mRumbleMotors.bBigMotorMagnitude,
+          report.mRumbleMotors.bSmallMotorMagnitude);
+      }
       return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(request, 0);
     case 0x01:// LEDS
       mInstance->Log("XPad LED state changed to {:#04x}", report.mLEDs.mState);

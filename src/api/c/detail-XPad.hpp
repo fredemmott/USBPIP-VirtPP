@@ -75,6 +75,7 @@ struct FredEmmott_USBIP_VirtPP_XPad final {
 
   FredEmmott_USBIP_VirtPP_InstanceHandle mInstance {};
   XUSBInputReport mXUSBReport {};
+  FredEmmott_USBIP_VirtPP_XPad_Callbacks mCallbacks{};
 
   guarded_data<std::queue<FredEmmott::USBVirtPP::unique_request>>
     mGamepadInputQueue;

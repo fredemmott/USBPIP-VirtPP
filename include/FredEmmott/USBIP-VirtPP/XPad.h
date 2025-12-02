@@ -15,7 +15,12 @@ struct FredEmmott_USBIP_VirtPP_XPad;
 typedef FredEmmott_USBIP_VirtPP_XPad* FredEmmott_USBIP_VirtPP_XPadHandle;
 
 struct FredEmmott_USBIP_VirtPP_XPad_Callbacks {
-  uint8_t reserved; /* empty struct size varies between C and C++ */
+  /* The left and right motors are difference sizes.
+   *
+   * The left motor is the low-frequency motor (big), the right is the the
+   * low-frequency motor (small)
+   */
+  void(*OnRumble)(FredEmmott_USBIP_VirtPP_XPadHandle, uint16_t big, uint16_t small);
 };
 struct FredEmmott_USBIP_VirtPP_XPad_InitData {
   void* mUserData;
