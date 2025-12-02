@@ -10,16 +10,16 @@
 template <class T>
 struct guarded_data {
   struct unique_lock {
-    friend class guarded_data;
+    unique_lock(std::unique_lock<std::mutex> lock, T* data)
+      : mLock(std::move(lock)), mData(data) {
+    }
+
     T* operator->() const {
       return mData;
     }
 
   private:
     unique_lock() = delete;
-    unique_lock(std::unique_lock<std::mutex> lock, T* data)
-      : mLock(std::move(lock)), mData(data) {
-    }
 
     std::unique_lock<std::mutex> mLock;
     T* mData;
