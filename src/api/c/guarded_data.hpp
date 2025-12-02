@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 #pragma once
 #include <mutex>
+#include <print>
 
 /* Totally not a Rust mutex.
  *
@@ -18,6 +19,11 @@ struct guarded_data {
       return mData;
     }
 
+    void unlock() {
+      mData = nullptr;
+      mLock.unlock();
+    }
+
   private:
     unique_lock() = delete;
 
@@ -26,7 +32,12 @@ struct guarded_data {
   };
 
   unique_lock lock() {
-    return guarded_data::unique_lock(std::unique_lock {mMutex}, &mData);
+    try {
+      return guarded_data::unique_lock(std::unique_lock {mMutex}, &mData);
+    } catch (const std::exception& e) {
+      std::println(stderr, "Failed to lock: {}", e.what());
+      __debugbreak();
+    }
   }
 
 private:

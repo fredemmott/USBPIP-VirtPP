@@ -388,46 +388,28 @@ FredEmmott_USBIP_VirtPP_Instance::OnOutputRequest(
   FredEmmott_USBIP_VirtPP_Device& device,
   const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request,
   FredEmmott_USBIP_VirtPP_Request& apiRequest) {
-  if (device.mCallbacks.OnOutputRequest) {
-    thread_local uint8_t buffer[1024] {};
-    const auto dataLength = request.mTransferBufferLength.NativeValue();
-    if (dataLength > std::size(buffer)) {
-      __debugbreak();
-    }
-    if (dataLength > 0) {
-      if (const auto ret = RecvAll(mClientSocket, buffer, dataLength); !ret)
-        [[unlikely]] {
-        return ret.error();
-      }
-    }
-
-    return device.mCallbacks.OnOutputRequest(
-      &apiRequest,
-      request.mHeader.mEndpoint.NativeValue(),
-      request.mSetup.mRequestType,
-      request.mSetup.mRequest,
-      request.mSetup.mValue,
-      request.mSetup.mIndex,
-      request.mSetup.mLength,
-      dataLength ? buffer : nullptr,
-      dataLength);
+  thread_local uint8_t buffer[1024] {};
+  const auto dataLength = request.mTransferBufferLength.NativeValue();
+  if (dataLength > std::size(buffer)) {
+    __debugbreak();
   }
-
-  const auto [urbDirection, requestType, recipient]
-    = RequestType::Parse(request.mSetup.mRequestType);
-  if (requestType == RequestType::Type::Standard) {
-    switch (request.mSetup.mRequest) {
-      case 0x09:// SET_CONFIGURATION no-op, we only support 1 configuration
-      case 0x0A:// SET_IDLE: no-op
-        // Not actually an error with code 0
-        return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(&apiRequest, 0);
-      default:
-        return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(
-          &apiRequest, -EPIPE);
+  if (dataLength > 0) {
+    if (const auto ret = RecvAll(mClientSocket, buffer, dataLength); !ret)
+      [[unlikely]] {
+      return ret.error();
     }
   }
 
-  return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(&apiRequest, -EPIPE);
+  return device.mCallbacks.OnOutputRequest(
+    &apiRequest,
+    request.mHeader.mEndpoint.NativeValue(),
+    request.mSetup.mRequestType,
+    request.mSetup.mRequest,
+    request.mSetup.mValue,
+    request.mSetup.mIndex,
+    request.mSetup.mLength,
+    dataLength ? buffer : nullptr,
+    dataLength);
 }
 
 FredEmmott_USBIP_VirtPP_Result

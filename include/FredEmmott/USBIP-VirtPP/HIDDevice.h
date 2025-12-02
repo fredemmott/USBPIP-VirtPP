@@ -63,6 +63,8 @@ FredEmmott_USBIP_VirtPP_InstanceHandle FredEmmott_USBIP_VirtPP_HIDDevice_GetInst
 void* FredEmmott_USBIP_VirtPP_HIDDevice_GetInstanceUserData(
   FredEmmott_USBIP_VirtPP_HIDDeviceHandle);
 
+void FredEmmott_USBIP_VirtPP_HIDDevice_MarkDirty(FredEmmott_USBIP_VirtPP_HIDDeviceHandle);
+
 FredEmmott_USBIP_VirtPP_HIDDeviceHandle FredEmmott_USBIP_VirtPP_Request_GetHIDDevice(
   FredEmmott_USBIP_VirtPP_RequestHandle);
 void* FredEmmott_USBIP_VirtPP_Request_GetHIDDeviceUserData(

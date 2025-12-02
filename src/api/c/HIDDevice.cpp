@@ -1,9 +1,9 @@
 // Copyright 2025 Fred Emmott <fred@fredemmott.com>
 // SPDX-License-Identifier: MIT
 
+#include "detail-RequestType.hpp"
 #include "detail-hid.hpp"
 #include "detail.hpp"
-#include "detail-RequestType.hpp"
 
 #include <FredEmmott/HIDSpec.h>
 #include <FredEmmott/USBIP-VirtPP/Device.h>
@@ -56,7 +56,7 @@ FredEmmott_USBIP_VirtPP_HIDDevice::FredEmmott_USBIP_VirtPP_HIDDevice(
 
   const FredEmmott_USBIP_VirtPP_Device_InitData usbDeviceInit {
     .mUserData = this,
-    .mCallbacks = {&OnUSBInputRequestCallback},
+    .mCallbacks = {&OnUSBInputRequestCallback, &OnUSBOutputRequestCallback},
     .mAutoAttach = init.mAutoAttach,
     .mDeviceDescriptor = &mDeviceDescriptor,
     .mNumInterfaces = 1,
@@ -98,6 +98,25 @@ void FredEmmott_USBIP_VirtPP_HIDDevice::InitializeDeviceDescriptor() {
   };
 }
 
+void FredEmmott_USBIP_VirtPP_HIDDevice::MarkDirty() {
+  auto queue = mInputQueue.lock();
+  if (queue->empty()) {
+    return;
+  }
+
+  const auto [request, length] = std::move(queue->front());
+  queue->pop();
+  queue.unlock();
+
+  const auto result = mInit.mCallbacks.OnGetInputReport(request.get(), 0, length);
+  if (FredEmmott_USBIP_VirtPP_SUCCEEDED(result)) [[likely]] {
+    return;
+  }
+
+  mInstance->LogError(
+    "[HIDDevice] Failed to call OnGetInputReport callback: {}", result);
+}
+
 // Builds descriptors inside wrapper
 void FredEmmott_USBIP_VirtPP_HIDDevice::InitializeDescriptors() {
   InitializeDeviceDescriptor();
@@ -111,7 +130,8 @@ void FredEmmott_USBIP_VirtPP_HIDDevice::InitializeDescriptors() {
   const uint8_t hidReportsSize
     = sizeof(FredEmmott_HIDSpec_HIDDescriptor_ReportDescriptor)
     * mInit.mReportCount;
-  constexpr uint8_t endpointsSize = FredEmmott_USBSpec_EndPointDescriptor_Size * 2;
+  constexpr uint8_t endpointsSize
+    = FredEmmott_USBSpec_EndPointDescriptor_Size * 2;
   const uint16_t totalSize = configurationSize + interfacesSize
     + hidDescriptorsSize + hidReportsSize + endpointsSize;
 
@@ -189,7 +209,8 @@ void FredEmmott_USBIP_VirtPP_HIDDevice::InitializeDescriptors() {
   };
 }
 
-HRESULT FredEmmott_USBIP_VirtPP_HIDDevice::OnUSBInputRequest(
+FredEmmott_USBIP_VirtPP_Result
+FredEmmott_USBIP_VirtPP_HIDDevice::OnUSBInputRequest(
   const FredEmmott_USBIP_VirtPP_RequestHandle request,
   const uint32_t endpoint,
   const uint8_t rawRequestType,
@@ -205,7 +226,6 @@ HRESULT FredEmmott_USBIP_VirtPP_HIDDevice::OnUSBInputRequest(
     = RequestType::Parse(rawRequestType);
   // EP0 control requests
   if (endpoint == 0) {
-
     if (requestType == Standard && requestCode == 0x00 /* GET_STATUS */) {
       return FredEmmott_USBIP_VirtPP_Request_SendReply(request, uint8_t {});
     }
@@ -275,23 +295,6 @@ HRESULT FredEmmott_USBIP_VirtPP_HIDDevice::OnUSBInputRequest(
       }
     }
 
-    // Class GET_REPORT (IN)
-    if (
-      direction == DeviceToHost && requestType == Class
-      && recipient == Interface && requestCode == 0x01) {
-      const auto reportType = static_cast<uint8_t>(value >> 8);
-      const auto reportId = static_cast<uint8_t>(value & 0xff);
-      if (reportType == 0x01) {
-        // INPUT
-        if (mInit.mCallbacks.OnGetInputReport) {
-          return mInit.mCallbacks.OnGetInputReport(request, reportId, length);
-        }
-      }
-      // Not supported
-      __debugbreak();
-      return -1;
-    }
-
     // Other control requests not handled here
     // Microsoft "Extended CompatID OS descriptor
     if (rawRequestType == 0xC0 && requestCode == 0x04) {
@@ -304,14 +307,60 @@ HRESULT FredEmmott_USBIP_VirtPP_HIDDevice::OnUSBInputRequest(
   // Interrupt IN endpoint (EP1 IN)
   if (endpoint == 1) {
     if (mInit.mCallbacks.OnGetInputReport) {
-      return mInit.mCallbacks.OnGetInputReport(request, 0, length);
+      mInputQueue.lock()->emplace(
+        FredEmmott_USBIP_VirtPP_Request_Clone(request), length);
+      return FredEmmott_USBIP_VirtPP_SUCCESS;
     }
     __debugbreak();
     return -1;
   }
 
-  __debugbreak();
-  return -1;
+  mInstance->Log(
+    "[HIDDevice] unhandled USB input request {:#04x}/{:#04x}",
+    endpoint,
+    requestCode);
+  return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(request, -EPIPE);
+}
+
+FredEmmott_USBIP_VirtPP_Result
+FredEmmott_USBIP_VirtPP_HIDDevice::OnUSBOutputRequest(
+  FredEmmott_USBIP_VirtPP_RequestHandle request,
+  uint32_t endpoint,
+  uint8_t rawRequestType,
+  uint8_t requestCode,
+  uint16_t value,
+  uint16_t index,
+  uint16_t length,
+  const void* data,
+  uint16_t dataLength) {
+  using enum RequestType::Type;
+  using enum RequestType::Direction;
+  using enum RequestType::Recipient;
+  const auto [direction, requestType, recipient]
+    = RequestType::Parse(rawRequestType);
+  if (requestType == Standard && requestCode == 0x09) {
+    // SET_CONFIGURATION. No-op, we only support single configuration
+    return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(request, 0);
+  }
+
+  if (requestType == Class && requestCode == 0x0a) {
+    if ((value & 0xf0)) {
+      mInstance->LogError(
+        "SET_IDLE with finite duration (value {:#04x} is not supported, "
+        "disconnecting",
+        value);
+      return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(request, -EPIPE);
+    }
+    // SET_IDLE. No-op, just say OK.
+    mInstance->Log("SET_IDLE set for long-polling (duration of 0)");
+    return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(request, 0);
+  }
+
+  mInstance->Log(
+    "[HIDDevice] unhandled USB output request {:#04x}/{:#04x}",
+    endpoint,
+    requestCode);
+  return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(request, -EPIPE);
 }
 
 FredEmmott_USBIP_VirtPP_Result
@@ -323,11 +372,38 @@ FredEmmott_USBIP_VirtPP_HIDDevice::OnUSBInputRequestCallback(
   const uint16_t value,
   const uint16_t index,
   const uint16_t length) {
-  auto* usbDevice = FredEmmott_USBIP_VirtPP_Request_GetDevice(request);
+  // Short-cut instead of calling Request_GetDevice() followed by
+  // Device_GetUserData()
   auto* obj = static_cast<FredEmmott_USBIP_VirtPP_HIDDevice*>(
-    FredEmmott_USBIP_VirtPP_Device_GetUserData(usbDevice));
-  return static_cast<FredEmmott_USBIP_VirtPP_Result>(obj->OnUSBInputRequest(
-    request, endpoint, requestType, requestCode, value, index, length));
+    request->mDevice->mUserData);
+  return obj->OnUSBInputRequest(
+    request, endpoint, requestType, requestCode, value, index, length);
+}
+FredEmmott_USBIP_VirtPP_Result
+FredEmmott_USBIP_VirtPP_HIDDevice::OnUSBOutputRequestCallback(
+  const FredEmmott_USBIP_VirtPP_RequestHandle request,
+  const uint32_t endpoint,
+  const uint8_t requestType,
+  const uint8_t requestCode,
+  const uint16_t value,
+  const uint16_t index,
+  const uint16_t length,
+  const void* data,
+  const uint32_t dataLength) {
+  // Short-cut instead of calling Request_GetDevice() followed by
+  // Device_GetUserData()
+  auto* obj = static_cast<FredEmmott_USBIP_VirtPP_HIDDevice*>(
+    request->mDevice->mUserData);
+  return obj->OnUSBOutputRequest(
+    request,
+    endpoint,
+    requestType,
+    requestCode,
+    value,
+    index,
+    length,
+    data,
+    dataLength);
 }
 
 void* FredEmmott_USBIP_VirtPP_HIDDevice_GetUserData(
@@ -364,4 +440,9 @@ void* FredEmmott_USBIP_VirtPP_Request_GetHIDDeviceUserData(
   return static_cast<FredEmmott_USBIP_VirtPP_HIDDevice*>(
            handle->mDevice->mUserData)
     ->mInit.mUserData;
+}
+
+void FredEmmott_USBIP_VirtPP_HIDDevice_MarkDirty(
+  FredEmmott_USBIP_VirtPP_HIDDeviceHandle handle) {
+  handle->MarkDirty();
 }

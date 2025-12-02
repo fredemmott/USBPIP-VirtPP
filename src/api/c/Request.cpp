@@ -104,7 +104,7 @@ FredEmmott_USBIP_VirtPP_RequestHandle FredEmmott_USBIP_VirtPP_Request_Clone(
   return new FredEmmott_USBIP_VirtPP_Request(*orig);
 }
 
-void FredEmmott_USBIP_Virtpp_Request_Detroy(
+void FredEmmott_USBIP_VirtPP_Request_Destroy(
   FredEmmott_USBIP_VirtPP_RequestHandle handle) {
   delete handle;
 }

@@ -6,7 +6,6 @@
 #include "win32-attach.hpp"
 
 #include <FredEmmott/USBIP-VirtPP/Core.h>
-#include <FredEmmott/USBIP.hpp>
 
 #include <print>
 #include <ranges>
@@ -51,6 +50,11 @@ FredEmmott_USBIP_VirtPP_Device::FredEmmott_USBIP_VirtPP_Device(
   mCallbacks = initData->mCallbacks;
   if (!mCallbacks.OnInputRequest) {
     instance->LogError("Can't create device without OnInputRequest callback");
+    mInstance = nullptr;
+    return;
+  }
+  if (!mCallbacks.OnOutputRequest) {
+    instance->LogError("Can't create device without OnOutputRequest callback");
     mInstance = nullptr;
     return;
   }

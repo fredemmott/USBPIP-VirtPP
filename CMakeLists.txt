@@ -19,17 +19,20 @@ add_executable(
         include/FredEmmott/USBIP-VirtPP/HIDDevice.h
         include/FredEmmott/USBIP-VirtPP/Request.h
         include/FredEmmott/USBIP-VirtPP/XPad.h
+        include/FredEmmott/USBIP-VirtPP/Mouse.h
         include/FredEmmott/USBSpec.h
         include/FredEmmott/USBSpec/win32.h
         include/FredEmmott/HIDSpec.h
         src/api/c/detail.hpp
         src/api/c/detail-hid.hpp
         src/api/c/detail-XPad.hpp
+        src/api/c/detail-Mouse.hpp
         src/api/c/Device.cpp
         src/api/c/HIDDevice.cpp
         src/api/c/Instance.cpp
         src/api/c/Request.cpp
         src/api/c/XPad.cpp
+        src/api/c/Mouse.cpp
         src/api/c/send-recv.cpp
         src/api/c/send-recv.hpp
         src/api/c/win32-attach.cpp
