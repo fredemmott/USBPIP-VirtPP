@@ -9,36 +9,43 @@
 
 #pragma pack(push, 1)
 namespace FredEmmott::USBIP {
-template <std::integral T>
-class BigEndian {
-public:
-  BigEndian() = default;
+template <std::endian TEndian, std::integral T>
+class FixedEndian {
+ public:
+  FixedEndian() = default;
 
-  constexpr BigEndian(const T value)
-    : mValue(MaybeSwap(value)) {
+  constexpr FixedEndian(const T value) : mValue(MaybeSwap(value)) {
   }
 
-  [[nodiscard]] constexpr T BigEndianValue() const { return mValue; }
-  [[nodiscard]] constexpr T NativeValue() const { return MaybeSwap(mValue); }
-  [[nodiscard]] constexpr T LittleEndianValue() const { return std::byteswap(mValue); }
+  [[nodiscard]] constexpr T NativeValue() const {
+    return MaybeSwap(mValue);
+  }
+
+  constexpr operator T() const {
+    return NativeValue();
+  }
 
   constexpr bool operator==(const T other) const {
     return NativeValue() == other;
   }
-  constexpr bool operator==(const BigEndian<T>& other) const {
+
+  constexpr bool operator==(const FixedEndian<TEndian, T>& other) const {
     return mValue == other.mValue;
   }
-private:
+
+ private:
   static constexpr T MaybeSwap(const T value) {
-    if constexpr (std::endian::native == std::endian::big) {
+    if constexpr (std::endian::native == TEndian) {
       return value;
     } else {
       return std::byteswap(value);
     }
   }
 
-  T mValue{};
+  T mValue {};
 };
+template <std::integral T>
+using BigEndian = FixedEndian<std::endian::big, T>;
 
 using beu16_t = BigEndian<uint16_t>;
 static_assert(sizeof(beu16_t) == 2);
@@ -55,11 +62,11 @@ using bei64_t = BigEndian<int64_t>;
 static_assert(sizeof(bei64_t) == 8);
 
 constexpr auto operator""_be16(const uint64_t value) {
-  return BigEndian{static_cast<uint16_t>(value)}.BigEndianValue();;
+  return std::bit_cast<uint16_t>(BigEndian<uint16_t>(value));
 }
 
 constexpr auto operator""_be32(const uint64_t value) {
-  return BigEndian{static_cast<uint32_t>(value)}.BigEndianValue();;
+  return std::bit_cast<uint32_t>(BigEndian<uint32_t>(value));
 }
 
 constexpr auto Version = 0x0111_be16;
@@ -74,10 +81,10 @@ enum class SetupCommandCode : uint16_t {
 namespace detail {
 constexpr uint32_t Get4ByteCommandCode(const SetupCommandCode code) {
   struct Packed {
-    uint16_t mVersion{};
-    uint16_t mCode{};
+    uint16_t mVersion {};
+    uint16_t mCode {};
   };
-  const Packed packed{Version, std::to_underlying(code)};
+  const Packed packed {Version, std::to_underlying(code)};
   return std::bit_cast<uint32_t>(packed);
 }
 }// namespace detail
@@ -96,64 +103,63 @@ enum class CommandCode : uint32_t {
 };
 
 struct SetupHeader {
-  uint16_t mUSBIPVersion{Version};
-  SetupCommandCode mCommandCode{};
-  beu32_t mStatus{};
+  uint16_t mUSBIPVersion {Version};
+  SetupCommandCode mCommandCode {};
+  beu32_t mStatus {};
 
-  explicit SetupHeader(const SetupCommandCode code)
-    : mCommandCode(code) {
+  explicit SetupHeader(const SetupCommandCode code) : mCommandCode(code) {
   }
 };
 
 struct OP_REQ_DEVLIST {
-  SetupHeader mHeader{SetupCommandCode::OP_REQ_DEVLIST};
+  SetupHeader mHeader {SetupCommandCode::OP_REQ_DEVLIST};
 };
 
 enum class Speed : uint32_t {
   Unknown = 0,
-  Low = 1_be32, // USB 1.1
-  Full = 2_be32, // USB 1.1
-  High = 3_be32, // USB 2.0
-  Variable = 4_be32, // USB 3.0
+  Low = 1_be32,// USB 1.1
+  Full = 2_be32,// USB 1.1
+  High = 3_be32,// USB 2.0
+  Variable = 4_be32,// USB 3.0
 };
 
 struct Device {
-  char mPath[256]{};
-  char mBusID[32]{};
-  beu32_t mBusNum{};
-  beu32_t mDevNum{};
-  Speed mSpeed{};
-  beu16_t mVendorID{};
-  beu16_t mProductID{};
-  beu16_t mDeviceVersion{};// `bcdDevice`, binary-coded decimal
-  uint8_t mDeviceClass{};
-  uint8_t mDeviceSubClass{};
-  uint8_t mDeviceProtocol{};
-  uint8_t mConfigurationValue{};
-  uint8_t mNumConfigurations{};
-  uint8_t mNumInterfaces{};
+  char mPath[256] {};
+  char mBusID[32] {};
+  beu32_t mBusNum {};
+  beu32_t mDevNum {};
+  Speed mSpeed {};
+  beu16_t mVendorID {};
+  beu16_t mProductID {};
+  beu16_t mDeviceVersion {};// `bcdDevice`, binary-coded decimal
+  uint8_t mDeviceClass {};
+  uint8_t mDeviceSubClass {};
+  uint8_t mDeviceProtocol {};
+  uint8_t mConfigurationValue {};
+  uint8_t mNumConfigurations {};
+  uint8_t mNumInterfaces {};
 };
 
 struct Interface {
-  uint8_t mClass{};
-  uint8_t mSubClass{};
-  uint8_t mProtocol{};
-  const uint8_t mPadding{};
+  uint8_t mClass {};
+  uint8_t mSubClass {};
+  uint8_t mProtocol {};
+  const uint8_t mPadding {};
 };
 
 struct OP_REP_DEVLIST {
-  SetupHeader mHeader{SetupCommandCode::OP_REP_DEVLIST};
-  beu32_t mNumDevices{};
+  SetupHeader mHeader {SetupCommandCode::OP_REP_DEVLIST};
+  beu32_t mNumDevices {};
 };
 
 struct OP_REQ_IMPORT {
-  SetupHeader mHeader{SetupCommandCode::OP_REQ_IMPORT};
-  char mBusID[32]{};
+  SetupHeader mHeader {SetupCommandCode::OP_REQ_IMPORT};
+  char mBusID[32] {};
 };
 
 struct OP_REP_IMPORT {
-  SetupHeader mHeader{SetupCommandCode::OP_REP_IMPORT};
-  Device mDevice{};
+  SetupHeader mHeader {SetupCommandCode::OP_REP_IMPORT};
+  Device mDevice {};
 };
 
 enum class Direction : uint32_t {
@@ -162,51 +168,51 @@ enum class Direction : uint32_t {
 };
 
 struct BasicHeader {
-  CommandCode mCommandCode{};
-  uint32_t mSequenceNumber{};
-  beu32_t mDeviceID{};
-  Direction mDirection{};
-  beu32_t mEndpoint{};
+  CommandCode mCommandCode {};
+  uint32_t mSequenceNumber {};
+  beu32_t mDeviceID {};
+  Direction mDirection {};
+  beu32_t mEndpoint {};
 };
 
 struct USBIP_CMD_SUBMIT {
   struct Setup {
-    uint8_t mRequestType{};
-    uint8_t mRequest{};
-    uint16_t mValue{};
-    uint16_t mIndex{};
-    uint16_t mLength{};
+    uint8_t mRequestType {};
+    uint8_t mRequest {};
+    uint16_t mValue {};
+    uint16_t mIndex {};
+    uint16_t mLength {};
   };
 
-  BasicHeader mHeader{CommandCode::USBIP_CMD_SUBMIT};
-  beu32_t mTransferFlags{};
-  beu32_t mTransferBufferLength{};
-  beu32_t mStartFrame{};
-  beu32_t mNumberOfPackets{};
-  beu32_t mInterval{};
-  Setup mSetup{};
+  BasicHeader mHeader {CommandCode::USBIP_CMD_SUBMIT};
+  beu32_t mTransferFlags {};
+  beu32_t mTransferBufferLength {};
+  beu32_t mStartFrame {};
+  beu32_t mNumberOfPackets {};
+  beu32_t mInterval {};
+  Setup mSetup {};
 };
 
 struct USBIP_RET_SUBMIT {
-  BasicHeader mHeader{CommandCode::USBIP_RET_SUBMIT};
-  bei32_t mStatus{};
-  beu32_t mActualLength{};
-  beu32_t mStartFrame{};
-  beu32_t mNumberOfPackets{0xffff'ffff};// magic value for non-ISO transfers
-  beu32_t mErrorCount{};
-  const char mPadding[8]{};
+  BasicHeader mHeader {CommandCode::USBIP_RET_SUBMIT};
+  bei32_t mStatus {};
+  beu32_t mActualLength {};
+  beu32_t mStartFrame {};
+  beu32_t mNumberOfPackets {0xffff'ffff};// magic value for non-ISO transfers
+  beu32_t mErrorCount {};
+  const char mPadding[8] {};
 };
 
 struct USBIP_CMD_UNLINK {
-  BasicHeader mHeader{CommandCode::USBIP_CMD_UNLINK};
-  beu32_t mUnlinkSequenceNumber{};
-  const char mPadding[24]{};
+  BasicHeader mHeader {CommandCode::USBIP_CMD_UNLINK};
+  beu32_t mUnlinkSequenceNumber {};
+  const char mPadding[24] {};
 };
 
 struct USBIP_RET_UNLINK {
-  BasicHeader mHeader{CommandCode::USBIP_RET_UNLINK};
-  beu32_t mStatus{};
-  const char mPadding[24]{};
+  BasicHeader mHeader {CommandCode::USBIP_RET_UNLINK};
+  beu32_t mStatus {};
+  const char mPadding[24] {};
 };
 }// namespace FredEmmott::USBIP
 

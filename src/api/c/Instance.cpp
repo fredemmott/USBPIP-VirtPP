@@ -375,7 +375,7 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Instance::OnInputRequest(
   FredEmmott_USBIP_VirtPP_Request& apiRequest) {
   return device.mCallbacks.OnInputRequest(
     &apiRequest,
-    request.mHeader.mEndpoint.NativeValue(),
+    request.mHeader.mEndpoint,
     request.mSetup.mRequestType,
     request.mSetup.mRequest,
     request.mSetup.mValue,
@@ -402,7 +402,7 @@ FredEmmott_USBIP_VirtPP_Instance::OnOutputRequest(
 
   return device.mCallbacks.OnOutputRequest(
     &apiRequest,
-    request.mHeader.mEndpoint.NativeValue(),
+    request.mHeader.mEndpoint,
     request.mSetup.mRequestType,
     request.mSetup.mRequest,
     request.mSetup.mValue,
@@ -417,7 +417,7 @@ FredEmmott_USBIP_VirtPP_Instance::OnSubmitRequest(
   const FredEmmott::USBIP::USBIP_CMD_SUBMIT& request) {
   const auto busIndex = (request.mHeader.mDeviceID.NativeValue() >> 16) - 1;
   const auto deviceIndex
-    = (request.mHeader.mDeviceID.NativeValue() & 0xffff) - 1;
+    = (request.mHeader.mDeviceID & 0xffff) - 1;
   if (busIndex >= mBusses.size() || deviceIndex >= mBusses[busIndex].size())
     [[unlikely]] {
     LogError(
@@ -431,7 +431,7 @@ FredEmmott_USBIP_VirtPP_Instance::OnSubmitRequest(
     .mDevice = &device,
     .mSocket = mClientSocket,
     .mSequenceNumber = request.mHeader.mSequenceNumber,
-    .mTransferBufferLength = request.mTransferBufferLength.NativeValue(),
+    .mTransferBufferLength = request.mTransferBufferLength,
   };
 
   if (request.mHeader.mDirection == USBIP::Direction::In) {
