@@ -32,6 +32,8 @@ add_executable(
         src/api/c/XPad.cpp
         src/api/c/send-recv.cpp
         src/api/c/send-recv.hpp
+        src/api/c/win32-attach.cpp
+        src/api/c/win32-attach.hpp
         src/test.cpp
 )
 target_include_directories(usbip_virtpp PRIVATE include/)

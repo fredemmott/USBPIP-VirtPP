@@ -355,7 +355,10 @@ FredEmmott_USBIP_VirtPP_HIDDeviceHandle Create(
 namespace XPad {
 FredEmmott_USBIP_VirtPP_XPadHandle Create(
   const FredEmmott_USBIP_VirtPP_InstanceHandle instance) {
-  constexpr FredEmmott_USBIP_VirtPP_XPad_InitData init {};
+  constexpr FredEmmott_USBIP_VirtPP_XPad_InitData init {
+    //.mAutoAttach = AutoAttachEnabled,
+    .mAutoAttach = true,
+  };
   return FredEmmott_USBIP_VirtPP_XPad_Create(instance, &init);
 }
 }// namespace XPad
