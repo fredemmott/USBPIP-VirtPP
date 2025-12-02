@@ -34,15 +34,13 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_XPad::UpdateInPlace(
     FredEmmott_USBIP_VirtPP_XPad_State*)) {
   callback(this, userData, &mXUSBReport.mGamepadInputReport.mState);
 
-  std::unique_ptr<FredEmmott_USBIP_VirtPP_Request> request;
-  {
-    const auto queue = mGamepadInputQueue.lock();
-    if (queue->empty()) {
-      return FredEmmott_USBIP_VirtPP_SUCCESS;
-    }
-    request.reset(queue->front());
-    queue->pop();
+  auto queue = mGamepadInputQueue.lock();
+  if (queue->empty()) {
+    return FredEmmott_USBIP_VirtPP_SUCCESS;
   }
+  const auto request = std::move(queue->front());
+  queue->pop();
+  queue.unlock();
 
   return FredEmmott_USBIP_VirtPP_Request_SendReply(request.get(), mXUSBReport);
 }
@@ -346,9 +344,9 @@ FredEmmott_USBIP_VirtPP_XPad::OnGamepadInputRequest(
   using enum RequestType::Type;
   using enum RequestType::Recipient;
   if (rawRequestType == 0 && requestCode == 0) {
-    const auto queue = mGamepadInputQueue.lock();
-    queue->push(FredEmmott_USBIP_VirtPP_Request_Clone(request));
-    return S_OK;
+    mGamepadInputQueue.lock()->emplace(
+      FredEmmott_USBIP_VirtPP_Request_Clone(request));
+    return FredEmmott_USBIP_VirtPP_SUCCESS;
   }
   return FredEmmott_USBIP_VirtPP_Request_SendErrorReply(request, -EPIPE);
 }

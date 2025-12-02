@@ -3,6 +3,7 @@
 #pragma once
 
 #include "guarded_data.hpp"
+#include "handles.hpp"
 
 #include <FredEmmott/USBIP-VirtPP/XPad.h>
 #include <FredEmmott/USBSpec.h>
@@ -75,7 +76,7 @@ struct FredEmmott_USBIP_VirtPP_XPad final {
   FredEmmott_USBIP_VirtPP_InstanceHandle mInstance {};
   XUSBInputReport mXUSBReport {};
 
-  guarded_data<std::queue<FredEmmott_USBIP_VirtPP_RequestHandle>>
+  guarded_data<std::queue<FredEmmott::USBIP_VirtPP::unique_request>>
     mGamepadInputQueue;
 
   FredEmmott_USBIP_VirtPP_Result OnControlInputRequest(
