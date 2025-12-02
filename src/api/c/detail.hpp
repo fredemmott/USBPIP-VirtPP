@@ -5,19 +5,19 @@
 #include <FredEmmott/USBIP-VirtPP/Core.h>
 #include <FredEmmott/USBIP-VirtPP/Device.h>
 #include <FredEmmott/USBIP.hpp>
+#include "logging.hpp"
 
 #include <format>
 #include <optional>
-#include <print>
 #include <stop_token>
 #include <string_view>
 #include <vector>
 
+#include <mutex>
+
 // clang-format off
 #include <winsock2.h>
 #include <wil/resource.h>
-
-#include <mutex>
 // clang-format on
 
 struct FredEmmott_USBIP_VirtPP_Device final {
@@ -64,40 +64,17 @@ struct FredEmmott_USBIP_VirtPP_Instance final {
   ~FredEmmott_USBIP_VirtPP_Instance();
   uint16_t GetPortNumber() const;
 
-  template <class... Args>
-  void LogSeverity(
-    const int severity,
-    std::format_string<Args...> fmt,
-    Args&&... args) const {
-    if (const auto callback = mInitData.mCallbacks.OnLogMessage) {
-      const auto formatted = std::format(fmt, std::forward<Args>(args)...);
-      callback(severity, formatted.c_str(), formatted.size());
-    } else {
-      std::println(
-        (severity >= FredEmmott_USBIP_VirtPP_LogSeverity_Error) ? stderr
-                                                                : stdout,
-        fmt,
-        std::forward<Args>(args)...);
-    }
-  }
-
-  template <class... Args>
-  void LogError(std::format_string<Args...> fmt, Args&&... args) const {
-    LogSeverity(
-      FredEmmott_USBIP_VirtPP_LogSeverity_Error,
-      fmt,
-      std::forward<Args>(args)...);
-  }
-
-  template <class... Args>
-  void Log(std::format_string<Args...> fmt, Args&&... args) const {
-    LogSeverity(
-      FredEmmott_USBIP_VirtPP_LogSeverity_Default,
-      fmt,
-      std::forward<Args>(args)...);
-  }
-
   void Run();
+
+  template<class... Args>
+  void LogError(std::format_string<Args...> fmt, Args&&... args) const {
+    return FredEmmott::USBVirtPP::LogError(this, fmt, std::forward<Args>(args)...);
+  }
+
+  template<class... Args>
+  void Log(std::format_string<Args...> fmt, Args&&... args) const {
+    return FredEmmott::USBVirtPP::Log(this, fmt, std::forward<Args>(args)...);
+  }
 
  private:
   bool mNeedWSACleanup {false};

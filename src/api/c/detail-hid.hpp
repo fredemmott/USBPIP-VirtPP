@@ -42,7 +42,7 @@ struct FredEmmott_USBIP_VirtPP_HIDDevice final {
       : mHandle(std::forward<T>(handle)), mLength(length) {
     }
 
-    FredEmmott::USBIP_VirtPP::unique_request mHandle {};
+    FredEmmott::USBVirtPP::unique_request mHandle {};
     uint16_t mLength {};
   };
 

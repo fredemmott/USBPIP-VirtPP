@@ -23,6 +23,7 @@ add_executable(
         include/FredEmmott/USBSpec.h
         include/FredEmmott/USBSpec/win32.h
         include/FredEmmott/HIDSpec.h
+        src/api/c/CInvoke.hpp
         src/api/c/detail.hpp
         src/api/c/detail-hid.hpp
         src/api/c/detail-XPad.hpp

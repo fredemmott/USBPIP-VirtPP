@@ -1,6 +1,7 @@
 // Copyright 2025 Fred Emmott <fred@fredemmott.com>
 // SPDX-License-Identifier: MIT
 
+#include "CInvoke.hpp"
 #include "detail-RequestType.hpp"
 #include "detail-hid.hpp"
 #include "detail.hpp"
@@ -22,6 +23,7 @@ enum class StringIndex : uint8_t {
   SerialNumber = 3,
   Interface = 4,
 };
+using ImplClass = FredEmmott_USBIP_VirtPP_HIDDevice;
 }// namespace
 
 FredEmmott_USBIP_VirtPP_HIDDeviceHandle
@@ -108,7 +110,8 @@ void FredEmmott_USBIP_VirtPP_HIDDevice::MarkDirty() {
   queue->pop();
   queue.unlock();
 
-  const auto result = mInit.mCallbacks.OnGetInputReport(request.get(), 0, length);
+  const auto result
+    = mInit.mCallbacks.OnGetInputReport(request.get(), 0, length);
   if (FredEmmott_USBIP_VirtPP_SUCCEEDED(result)) [[likely]] {
     return;
   }
@@ -444,5 +447,6 @@ void* FredEmmott_USBIP_VirtPP_Request_GetHIDDeviceUserData(
 
 void FredEmmott_USBIP_VirtPP_HIDDevice_MarkDirty(
   FredEmmott_USBIP_VirtPP_HIDDeviceHandle handle) {
-  handle->MarkDirty();
+  FredEmmott::USBVirtPP::CInvoke(
+    handle->mInstance, &ImplClass::MarkDirty)(handle);
 }

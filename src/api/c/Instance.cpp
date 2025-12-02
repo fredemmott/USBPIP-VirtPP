@@ -481,3 +481,8 @@ void FredEmmott_USBIP_VirtPP_RequestStopInstance(
   FredEmmott_USBIP_VirtPP_InstanceHandle instance) {
   instance->mStopSource.request_stop();
 }
+
+Logger GetLoggerCallback(
+  FredEmmott_USBIP_VirtPP_Instance const* instance) {
+  return instance->mInitData.mCallbacks.OnLogMessage;
+}

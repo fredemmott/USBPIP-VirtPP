@@ -6,7 +6,7 @@
 
 #include <memory>
 
-namespace FredEmmott::USBIP_VirtPP {
+namespace FredEmmott::USBVirtPP {
 
 using unique_request = std::unique_ptr<
   FredEmmott_USBIP_VirtPP_Request,
@@ -14,4 +14,4 @@ using unique_request = std::unique_ptr<
     FredEmmott_USBIP_VirtPP_Request_Destroy(h);
   })>;
 
-}// namespace FredEmmott::USBIP_VirtPP
+}// namespace FredEmmott::USBVirtPP
