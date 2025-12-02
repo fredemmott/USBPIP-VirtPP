@@ -61,21 +61,21 @@ static_assert(sizeof(bei32_t) == 4);
 using bei64_t = BigEndian<int64_t>;
 static_assert(sizeof(bei64_t) == 8);
 
-constexpr auto operator""_be16(const uint64_t value) {
+constexpr auto operator""_beu16(const uint64_t value) {
   return std::bit_cast<uint16_t>(BigEndian<uint16_t>(value));
 }
 
-constexpr auto operator""_be32(const uint64_t value) {
+constexpr auto operator""_beu32(const uint64_t value) {
   return std::bit_cast<uint32_t>(BigEndian<uint32_t>(value));
 }
 
-constexpr auto Version = 0x0111_be16;
+constexpr auto Version = 0x0111_beu16;
 
 enum class SetupCommandCode : uint16_t {
-  OP_REQ_DEVLIST = 0x8005_be16,
-  OP_REP_DEVLIST = 0x0005_be16,
-  OP_REQ_IMPORT = 0x8003_be16,
-  OP_REP_IMPORT = 0x0003_be16,
+  OP_REQ_DEVLIST = 0x8005_beu16,
+  OP_REP_DEVLIST = 0x0005_beu16,
+  OP_REQ_IMPORT = 0x8003_beu16,
+  OP_REP_IMPORT = 0x0003_beu16,
 };
 
 namespace detail {
@@ -96,10 +96,10 @@ enum class CommandCode : uint32_t {
   = detail::Get4ByteCommandCode(SetupCommandCode::OP_REP_DEVLIST),
   OP_REQ_IMPORT = detail::Get4ByteCommandCode(SetupCommandCode::OP_REQ_IMPORT),
   OP_REP_IMPORT = detail::Get4ByteCommandCode(SetupCommandCode::OP_REP_IMPORT),
-  USBIP_CMD_SUBMIT = 0x0000'0001_be32,
-  USBIP_CMD_UNLINK = 0x0000'0002_be32,
-  USBIP_RET_SUBMIT = 0x0000'0003_be32,
-  USBIP_RET_UNLINK = 0x0000'0004_be32,
+  USBIP_CMD_SUBMIT = 0x0000'0001_beu32,
+  USBIP_CMD_UNLINK = 0x0000'0002_beu32,
+  USBIP_RET_SUBMIT = 0x0000'0003_beu32,
+  USBIP_RET_UNLINK = 0x0000'0004_beu32,
 };
 
 struct SetupHeader {
@@ -117,10 +117,10 @@ struct OP_REQ_DEVLIST {
 
 enum class Speed : uint32_t {
   Unknown = 0,
-  Low = 1_be32,// USB 1.1
-  Full = 2_be32,// USB 1.1
-  High = 3_be32,// USB 2.0
-  Variable = 4_be32,// USB 3.0
+  Low = 1_beu32,// USB 1.1
+  Full = 2_beu32,// USB 1.1
+  High = 3_beu32,// USB 2.0
+  Variable = 4_beu32,// USB 3.0
 };
 
 struct Device {
@@ -164,7 +164,7 @@ struct OP_REP_IMPORT {
 
 enum class Direction : uint32_t {
   Out = 0,
-  In = 1_be32,
+  In = 1_beu32,
 };
 
 struct BasicHeader {
