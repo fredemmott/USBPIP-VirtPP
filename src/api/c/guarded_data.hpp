@@ -32,12 +32,7 @@ struct guarded_data {
   };
 
   unique_lock lock() {
-    try {
-      return guarded_data::unique_lock(std::unique_lock {mMutex}, &mData);
-    } catch (const std::exception& e) {
-      std::println(stderr, "Failed to lock: {}", e.what());
-      __debugbreak();
-    }
+    return guarded_data::unique_lock(std::unique_lock {mMutex}, &mData);
   }
 
 private:
