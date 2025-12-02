@@ -33,18 +33,6 @@ struct FredEmmott_USBIP_VirtPP_HIDDevice_Callbacks {
     FredEmmott_USBIP_VirtPP_RequestHandle,
     uint8_t reportId,
     uint16_t expectedLength);
-
-  /* Called when the host sends an OUTPUT report via a class SET_REPORT
-   * request with report type OUTPUT.
-   *
-   * Note: current transport only exposes control phase metadata; data-stage
-   * payload delivery may be limited depending on backend implementation.
-   */
-  FredEmmott_USBIP_VirtPP_Result (*OnSetOutputReport)(
-    FredEmmott_USBIP_VirtPP_RequestHandle,
-    uint8_t reportId,
-    const void* data,
-    size_t dataSize);
 };
 
 struct FredEmmott_USBIP_VirtPP_HIDDevice_InitData {
