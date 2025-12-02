@@ -356,8 +356,7 @@ namespace XPad {
 FredEmmott_USBIP_VirtPP_XPadHandle Create(
   const FredEmmott_USBIP_VirtPP_InstanceHandle instance) {
   constexpr FredEmmott_USBIP_VirtPP_XPad_InitData init {
-    //.mAutoAttach = AutoAttachEnabled,
-    .mAutoAttach = true,
+    .mAutoAttach = AutoAttachEnabled,
   };
   return FredEmmott_USBIP_VirtPP_XPad_Create(instance, &init);
 }
