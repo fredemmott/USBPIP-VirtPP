@@ -25,11 +25,12 @@ struct FredEmmott_USBIP_VirtPP_Mouse_State {
    * bit 1 = right button
    * bit 2 = middle button
    */
-  uint8_t bButtons;
+  uint8_t bmButtons;
   int8_t bDX;
   int8_t bDY;
+  int8_t bDWheel;
 };
-static_assert(sizeof(FredEmmott_USBIP_VirtPP_Mouse_State) == 3, "Unexpected packing for Mouse state");
+static_assert(sizeof(FredEmmott_USBIP_VirtPP_Mouse_State) == 4, "Unexpected packing for Mouse state");
 
 FredEmmott_USBIP_VirtPP_MouseHandle FredEmmott_USBIP_VirtPP_Mouse_Create(
   FredEmmott_USBIP_VirtPP_InstanceHandle,

@@ -54,7 +54,17 @@ int main() {
   const auto feeder = std::async([mouse, xpad]() {
     while (true) {
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      FredEmmott_USBIP_VirtPP_Mouse_Move(mouse, 1, 1);
+      FredEmmott_USBIP_VirtPP_Mouse_UpdateInPlace(
+        mouse,
+        nullptr,
+        [](
+          FredEmmott_USBIP_VirtPP_MouseHandle,
+          void*,
+          FredEmmott_USBIP_VirtPP_Mouse_State* state) {
+          state->bDX += 1;
+          state->bDY += 1;
+          state->bDWheel += 1;
+        });
       FredEmmott_USBIP_VirtPP_XPad_UpdateInPlace(
         xpad,
         nullptr,
