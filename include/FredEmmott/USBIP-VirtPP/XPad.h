@@ -12,7 +12,7 @@ extern "C" {
 #include <inttypes.h>
 #endif
 struct FredEmmott_USBIP_VirtPP_XPad;
-typedef FredEmmott_USBIP_VirtPP_XPad* FredEmmott_USBIP_VirtPP_XPadHandle;
+typedef struct FredEmmott_USBIP_VirtPP_XPad* FredEmmott_USBIP_VirtPP_XPadHandle;
 
 struct FredEmmott_USBIP_VirtPP_XPad_Callbacks {
   /* The left and right motors are difference sizes.
@@ -20,13 +20,16 @@ struct FredEmmott_USBIP_VirtPP_XPad_Callbacks {
    * The left motor is the low-frequency motor (big), the right is the the
    * low-frequency motor (small)
    */
-  void(*OnRumble)(FredEmmott_USBIP_VirtPP_XPadHandle, uint16_t big, uint16_t small);
+  void (*OnRumble)(
+    FredEmmott_USBIP_VirtPP_XPadHandle,
+    uint16_t big,
+    uint16_t small);
 };
 struct FredEmmott_USBIP_VirtPP_XPad_InitData {
   void* mUserData;
-  FredEmmott_USBIP_VirtPP_XPad_Callbacks mCallbacks;
+  struct FredEmmott_USBIP_VirtPP_XPad_Callbacks mCallbacks;
 
-  bool mAutoAttach;
+  BOOL mAutoAttach;
 };
 
 enum FredEmmott_USBIP_VirtPP_XPad_Buttons : uint16_t {
@@ -62,11 +65,13 @@ struct FredEmmott_USBIP_VirtPP_XPad_State {
   int16_t wThumbRightX;
   int16_t wThumbRightY;
 };
-static_assert(sizeof(FredEmmott_USBIP_VirtPP_XPad_State) == 12);
+static_assert(
+  sizeof(struct FredEmmott_USBIP_VirtPP_XPad_State) == 12,
+  "Incorrect size for XUSB gamepad state");
 
 FredEmmott_USBIP_VirtPP_XPadHandle FredEmmott_USBIP_VirtPP_XPad_Create(
   FredEmmott_USBIP_VirtPP_InstanceHandle,
-  const FredEmmott_USBIP_VirtPP_XPad_InitData*);
+  const struct FredEmmott_USBIP_VirtPP_XPad_InitData*);
 void FredEmmott_USBIP_VirtPP_XPad_Destroy(FredEmmott_USBIP_VirtPP_XPadHandle);
 void* FredEmmott_USBIP_VirtPP_XPad_GetUserData(
   FredEmmott_USBIP_VirtPP_XPadHandle);
@@ -80,11 +85,11 @@ void* FredEmmott_USBIP_VirtPP_XPad_GetUserData(
  */
 FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_XPad_UpdateInPlace(
   FredEmmott_USBIP_VirtPP_XPadHandle,
-  void *userData,
+  void* userData,
   void (*)(
     FredEmmott_USBIP_VirtPP_XPadHandle,
     void* userData,
-    FredEmmott_USBIP_VirtPP_XPad_State*));
+    struct FredEmmott_USBIP_VirtPP_XPad_State*));
 
 /** Update state, copying the data.
  *
@@ -94,7 +99,7 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_XPad_UpdateInPlace(
  */
 FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_XPad_SetState(
   FredEmmott_USBIP_VirtPP_XPadHandle,
-  const FredEmmott_USBIP_VirtPP_XPad_State*);
+  const struct FredEmmott_USBIP_VirtPP_XPad_State*);
 
 #ifdef __cplusplus
 }// extern "C"

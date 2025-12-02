@@ -172,7 +172,7 @@ FredEmmott_USBIP_VirtPP_XPad::FredEmmott_USBIP_VirtPP_XPad(
   const FredEmmott_USBIP_VirtPP_Device_InitData usbDeviceInit {
     .mUserData = this,
     .mCallbacks = {&OnUSBInputRequestCallback, &OnUSBOutputRequestCallback},
-    .mAutoAttach = initData.mAutoAttach,
+    .mAutoAttach = static_cast<bool>(initData.mAutoAttach),
     .mDeviceDescriptor = &GetDeviceDescriptor(),
     .mNumInterfaces = 1,
     .mInterfaceDescriptors = &GetConfigurationDescriptor().mGamepadInterface,

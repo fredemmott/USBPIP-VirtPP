@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 struct FredEmmott_USBIP_VirtPP_HIDDevice;
-typedef FredEmmott_USBIP_VirtPP_HIDDevice*
+typedef struct FredEmmott_USBIP_VirtPP_HIDDevice*
 FredEmmott_USBIP_VirtPP_HIDDeviceHandle;
 
 struct FredEmmott_USBIP_VirtPP_HIDDevice_USBDeviceData {
@@ -37,18 +37,18 @@ struct FredEmmott_USBIP_VirtPP_HIDDevice_Callbacks {
 
 struct FredEmmott_USBIP_VirtPP_HIDDevice_InitData {
   void* mUserData;
-  FredEmmott_USBIP_VirtPP_HIDDevice_Callbacks mCallbacks;
+  struct FredEmmott_USBIP_VirtPP_HIDDevice_Callbacks mCallbacks;
 
-  bool mAutoAttach;
-  FredEmmott_USBIP_VirtPP_HIDDevice_USBDeviceData mUSBDeviceData;
+  BOOL mAutoAttach;
+  struct FredEmmott_USBIP_VirtPP_HIDDevice_USBDeviceData mUSBDeviceData;
   uint8_t mReportCount;
-  FredEmmott_USBIP_VirtPP_BlobReference mReportDescriptors[1];
+  struct FredEmmott_USBIP_VirtPP_BlobReference mReportDescriptors[1];
 };
 
 FredEmmott_USBIP_VirtPP_HIDDeviceHandle
 FredEmmott_USBIP_VirtPP_HIDDevice_Create(
   FredEmmott_USBIP_VirtPP_InstanceHandle,
-  const FredEmmott_USBIP_VirtPP_HIDDevice_InitData*);
+  const struct FredEmmott_USBIP_VirtPP_HIDDevice_InitData*);
 void FredEmmott_USBIP_VirtPP_HIDDevice_Destroy(
   FredEmmott_USBIP_VirtPP_HIDDeviceHandle);
 

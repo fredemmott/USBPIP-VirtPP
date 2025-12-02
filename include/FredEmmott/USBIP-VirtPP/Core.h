@@ -34,7 +34,7 @@ struct FredEmmott_USBIP_VirtPP_StringReference {
 /****** Instance:: types *****/
 
 struct FredEmmott_USBIP_VirtPP_Instance;
-typedef FredEmmott_USBIP_VirtPP_Instance*
+typedef struct FredEmmott_USBIP_VirtPP_Instance*
 FredEmmott_USBIP_VirtPP_InstanceHandle;
 
 struct FredEmmott_USBIP_VirtPP_Instance_Callbacks {
@@ -44,16 +44,16 @@ struct FredEmmott_USBIP_VirtPP_Instance_Callbacks {
 
 struct FredEmmott_USBIP_VirtPP_Instance_InitData {
   void* mUserData;
-  FredEmmott_USBIP_VirtPP_Instance_Callbacks mCallbacks;
+  struct FredEmmott_USBIP_VirtPP_Instance_Callbacks mCallbacks;
 
   uint16_t mPortNumber;// set to zero to auto-assign
-  bool mAllowRemoteConnections;
+  BOOL mAllowRemoteConnections;
 };
 
 /****** Instance:: methods *****/
 
 FredEmmott_USBIP_VirtPP_InstanceHandle FredEmmott_USBIP_VirtPP_Instance_Create(
-  const FredEmmott_USBIP_VirtPP_Instance_InitData*);
+  const struct FredEmmott_USBIP_VirtPP_Instance_InitData*);
 // Retrieve the actual port number being listened on. Useful for binding to portNumber 0
 uint16_t FredEmmott_USBIP_VirtPP_Instance_GetPortNumber(
   FredEmmott_USBIP_VirtPP_InstanceHandle);

@@ -59,7 +59,7 @@ FredEmmott_USBIP_VirtPP_HIDDevice::FredEmmott_USBIP_VirtPP_HIDDevice(
   const FredEmmott_USBIP_VirtPP_Device_InitData usbDeviceInit {
     .mUserData = this,
     .mCallbacks = {&OnUSBInputRequestCallback, &OnUSBOutputRequestCallback},
-    .mAutoAttach = init.mAutoAttach,
+    .mAutoAttach = static_cast<bool>(init.mAutoAttach),
     .mDeviceDescriptor = &mDeviceDescriptor,
     .mNumInterfaces = 1,
     .mInterfaceDescriptors = mInterfaceDescriptors,

@@ -8,15 +8,16 @@
 #include <cinttypes>
 extern "C" {
 #else
+#include <assert.h>
 #include <inttypes.h>
 #endif
 
 struct FredEmmott_USBIP_VirtPP_Mouse;
-typedef FredEmmott_USBIP_VirtPP_Mouse* FredEmmott_USBIP_VirtPP_MouseHandle;
+typedef struct FredEmmott_USBIP_VirtPP_Mouse* FredEmmott_USBIP_VirtPP_MouseHandle;
 
 struct FredEmmott_USBIP_VirtPP_Mouse_InitData {
   void* mUserData;
-  bool mAutoAttach;
+  BOOL mAutoAttach;
 };
 
 struct FredEmmott_USBIP_VirtPP_Mouse_State {
@@ -30,11 +31,11 @@ struct FredEmmott_USBIP_VirtPP_Mouse_State {
   int8_t bDY;
   int8_t bDWheel;
 };
-static_assert(sizeof(FredEmmott_USBIP_VirtPP_Mouse_State) == 4, "Unexpected packing for Mouse state");
+static_assert(sizeof(struct FredEmmott_USBIP_VirtPP_Mouse_State) == 4, "Unexpected packing for Mouse state");
 
 FredEmmott_USBIP_VirtPP_MouseHandle FredEmmott_USBIP_VirtPP_Mouse_Create(
   FredEmmott_USBIP_VirtPP_InstanceHandle,
-  const FredEmmott_USBIP_VirtPP_Mouse_InitData*);
+  const struct FredEmmott_USBIP_VirtPP_Mouse_InitData*);
 void FredEmmott_USBIP_VirtPP_Mouse_Destroy(
   FredEmmott_USBIP_VirtPP_MouseHandle);
 void* FredEmmott_USBIP_VirtPP_Mouse_GetUserData(
@@ -47,12 +48,12 @@ FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Mouse_UpdateInPlace(
   void (*)(
     FredEmmott_USBIP_VirtPP_MouseHandle,
     void* userData,
-    FredEmmott_USBIP_VirtPP_Mouse_State*));
+    struct FredEmmott_USBIP_VirtPP_Mouse_State*));
 
 /* Update state, copying the data. */
 FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Mouse_SetState(
   FredEmmott_USBIP_VirtPP_MouseHandle,
-  const FredEmmott_USBIP_VirtPP_Mouse_State*);
+  const struct FredEmmott_USBIP_VirtPP_Mouse_State*);
 
 FredEmmott_USBIP_VirtPP_Result FredEmmott_USBIP_VirtPP_Mouse_Move(
   FredEmmott_USBIP_VirtPP_MouseHandle,

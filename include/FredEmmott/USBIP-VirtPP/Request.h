@@ -11,11 +11,11 @@ extern "C" {
 #endif
 
 struct FredEmmott_USBIP_VirtPP_Device;
-typedef FredEmmott_USBIP_VirtPP_Device*
+typedef struct FredEmmott_USBIP_VirtPP_Device*
   FredEmmott_USBIP_VirtPP_DeviceHandle;
 
 struct FredEmmott_USBIP_VirtPP_Request;
-typedef FredEmmott_USBIP_VirtPP_Request*
+typedef struct FredEmmott_USBIP_VirtPP_Request*
   FredEmmott_USBIP_VirtPP_RequestHandle;
 
 /****** Request:: methods *****/
