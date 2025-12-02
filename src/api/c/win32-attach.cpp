@@ -83,6 +83,7 @@ struct AttachIOCTL {
 auto UnexpectedHR(const AttachError::Stage stage, const HRESULT hr) {
   return std::unexpected {AttachError {stage, hr}};
 }
+[[nodiscard]]
 auto UnexpectedWin32(const AttachError::Stage stage, const DWORD win32) {
   return UnexpectedHR(stage, HRESULT_FROM_WIN32(win32));
 }
